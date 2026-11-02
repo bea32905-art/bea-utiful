@@ -217,24 +217,23 @@ h1 {
 }
 
 .photo-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    columns: 3;
+    column-gap: 14px;
 }
 
 .photo-tile {
     position: relative;
-    display: block;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 14px;
     overflow: hidden;
-    aspect-ratio: 1.18 / 1;
+    break-inside: avoid;
     background: #d3dbd6;
 }
 
 .photo-tile img {
     width: 100%;
-    height: 100%;
     display: block;
-    object-fit: cover;
     transition: transform 250ms ease;
 }
 
@@ -377,7 +376,12 @@ h1 {
     }
 
     .photo-grid {
-        gap: 8px;
+        columns: 2;
+        column-gap: 8px;
+    }
+
+    .photo-tile {
+        margin-bottom: 8px;
     }
 
     .photo-detail {
@@ -403,10 +407,6 @@ h1 {
 
     .roll-meta {
         grid-template-columns: 1fr 1fr;
-    }
-
-    .photo-tile {
-        aspect-ratio: 1 / 1;
     }
 
     .site-footer {

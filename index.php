@@ -83,7 +83,7 @@ function metadataValue(array $data, string $key): string
             <section class="roll-page" aria-labelledby="page-title">
                 <div class="page-heading">
                     <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
-                    <p class="eyebrow">35mm film <span>/</span> Contact sheet</p>
+                    <p class="eyebrow">35mm film <span>/</span> Photo gallery</p>
                     <h1 id="page-title">Roll 01</h1>
                 </div>
                 <dl class="roll-meta">
