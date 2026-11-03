@@ -27,11 +27,11 @@ $imageIndex = filter_var($_GET['image'] ?? 0, FILTER_VALIDATE_INT);
 $imageIndex = max(0, min((int) $imageIndex, max(0, count($imageFiles) - 1)));
 $imageDetails = is_array($metadata['images'] ?? null) ? $metadata['images'] : [];
 $rollTitles = [
-    'home' => 'A place for photographs.',
+    'home' => 'Select a Medium',
     'photography' => 'Photography',
     'journal' => 'Photo Journal',
     'about' => 'About',
-    'roll-1' => 'Roll 01',
+    'roll-1' => 'Roll 01    ',
     'roll-2' => 'Roll 02',
     'photo' => 'Photo Journal',
 ];
@@ -58,7 +58,7 @@ function metadataValue(array $data, string $key): string
 <body class="page-<?= escape($page) ?>">
     <header class="site-header">
         <a class="wordmark" href="?page=home" aria-label="bea-utiful home">bea-utiful<span>.</span></a>
-        <span class="header-note">A photographic journal</span>
+        <span class="header-note"> </span>
     </header>
 
     <main>
@@ -102,7 +102,7 @@ function metadataValue(array $data, string $key): string
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p class="empty-state">Photographs will appear here when the roll is added.</p>
+                    <p class="empty-state"></p>
                 <?php endif; ?>
             </section>
         <?php elseif ($page === 'photo' && $detail !== ''): ?>
@@ -139,12 +139,12 @@ function metadataValue(array $data, string $key): string
                 <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
                 <p class="eyebrow">bea-utiful.co.uk <span>/</span> Photo Journal</p>
                 <h1 id="page-title"><?= escape($title) ?></h1>
-                <p class="placeholder-copy"><?= $page === 'about' ? 'A growing collection of photographs and the stories around them.' : 'This roll is still waiting to be developed.' ?></p>
+                <p class="placeholder-copy"><?= $page === 'about' ? 'some text' : 'some other text' ?></p>
                 <a class="link-button" href="?page=journal"><span>Back to Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
             </section>
         <?php endif; ?>
     </main>
 
-    <footer class="site-footer"><span>© <?= date('Y') ?> bea-utiful</span><span>Made to be looked at slowly.</span></footer>
+    <footer class="site-footer"><span>© <?= date('Y') ?> bea-utiful</span></footer>
 </body>
 </html>
