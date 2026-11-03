@@ -66,14 +66,14 @@ function metadataValue(array $data, string $key): string
 </head>
 <body class="page-<?= escape($page) ?>">
     <header class="site-header">
-        <a class="wordmark" href="?page=home" aria-label="bea-utiful home">bea-utiful<span>.</span></a>
+        <a class="wordmark" href="?page=home" aria-label="bea-utiful home">bea-utiful</a>
         <span class="header-note"> </span>
     </header>
 
     <main>
         <?php if (in_array($page, ['home', 'photography', 'journal'], true)): ?>
             <section class="link-page" aria-labelledby="page-title">
-                <p class="eyebrow">bea-utiful.co.uk <span>/</span> 2026</p>
+                <p class="eyebrow">bea-utiful.me <span>/</span> 2026</p>
                 <h1 id="page-title"><?= escape($title) ?></h1>
                 <nav class="link-list" aria-label="Explore">
                     <?php if ($page === 'home'): ?>

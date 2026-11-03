@@ -1,11 +1,12 @@
 :root {
     color-scheme: light;
-    --paper: #edf2ef;
-    --ink: #1d2925;
-    --muted: #64736d;
-    --line: #cbd4ce;
-    --accent: #008000;
-    --accent-dark: #0a5c0a;
+    --paper: #f2f4f1;
+    --ink: #20211f;
+    --muted: #e5e9e3;
+    --line: #d8dfd6;
+    --accent: #ffc922;
+    --accent-dark: #ffba00;
+    --eyebrow: #008000;
     --white: #fbfcfa;
     --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
     --sans: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
@@ -89,7 +90,7 @@ main {
 
 .eyebrow {
     margin: 0 0 22px;
-    color: var(--accent-dark);
+    color: var(--eyebrow);
 }
 
 .eyebrow span {
