@@ -12,7 +12,12 @@ if (!in_array($page, $validPages, true)) {
     $page = 'home';
 }
 
-$photoDirectory = __DIR__ . '/photos/roll-1';
+$roll = $page === 'roll-2' || ($page === 'photo' && ($_GET['roll'] ?? '') === 'roll-2')
+    ? 'roll-2'
+    : 'roll-1';
+$rollNumber = $roll === 'roll-2' ? 2 : 1;
+$rollLabel = sprintf('Roll %02d', $rollNumber);
+$photoDirectory = __DIR__ . '/photos/' . $roll;
 $metadataFile = $photoDirectory . '/metadata.json';
 $metadata = is_file($metadataFile)
     ? json_decode((string) file_get_contents($metadataFile), true)
@@ -36,9 +41,13 @@ $rollTitles = [
     'photo' => 'Photo Journal',
 ];
 $title = $rollTitles[$page];
-$photoUrl = static fn(string $filename): string => 'photos/roll-1/' . rawurlencode($filename);
+$photoUrl = static fn(string $filename): string => 'photos/' . $roll . '/' . rawurlencode($filename);
 $detail = $imageNames[$imageIndex] ?? '';
 $detailData = is_array($imageDetails[$detail] ?? null) ? $imageDetails[$detail] : [];
+if ($detailData === [] && $roll === 'roll-2') {
+    $metadataFilename = preg_replace('/ {2,}/', ' ', $detail);
+    $detailData = is_array($imageDetails[$metadataFilename] ?? null) ? $imageDetails[$metadataFilename] : [];
+}
 
 function metadataValue(array $data, string $key): string
 {
@@ -79,12 +88,12 @@ function metadataValue(array $data, string $key): string
                 </nav>
                 <a class="back-link" href="<?= $page === 'home' ? '?page=home' : ($page === 'photography' ? '?page=home' : '?page=photography') ?>">&larr; <?= $page === 'home' ? 'Home' : ($page === 'photography' ? 'Home' : 'Photography') ?></a>
             </section>
-        <?php elseif ($page === 'roll-1'): ?>
+        <?php elseif ($page === 'roll-1' || $page === 'roll-2'): ?>
             <section class="roll-page" aria-labelledby="page-title">
                 <div class="page-heading">
                     <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
                     <p class="eyebrow">35mm film <span>/</span> Photo gallery</p>
-                    <h1 id="page-title">Roll 01</h1>
+                    <h1 id="page-title"><?= escape($rollLabel) ?></h1>
                 </div>
                 <dl class="roll-meta">
                     <div><dt>Film Type</dt><dd><?= escape(metadataValue($metadata, 'film_type')) ?></dd></div>
@@ -93,26 +102,26 @@ function metadataValue(array $data, string $key): string
                     <div class="roll-notes"><dt>Notes</dt><dd><?= nl2br(escape(metadataValue($metadata, 'notes'))) ?></dd></div>
                 </dl>
                 <?php if ($imageFiles): ?>
-                    <div class="photo-grid" aria-label="Photographs in Roll 1">
+                    <div class="photo-grid" aria-label="Photographs in <?= escape($rollLabel) ?>">
                         <?php foreach ($imageNames as $index => $filename): ?>
-                            <a class="photo-tile" href="?page=photo&amp;image=<?= $index ?>" aria-label="Open photograph <?= $index + 1 ?>">
+                            <a class="photo-tile" href="?page=photo&amp;roll=<?= escape($roll) ?>&amp;image=<?= $index ?>" aria-label="Open photograph <?= $index + 1 ?>">
                                 <img src="<?= escape($photoUrl($filename)) ?>" alt="Photograph <?= $index + 1 ?>" loading="lazy">
                                 <span><?= sprintf('%02d', $index + 1) ?></span>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p class="empty-state"></p>
+                    <p class="empty-state">No photographs have been added to this roll yet.</p>
                 <?php endif; ?>
             </section>
         <?php elseif ($page === 'photo' && $detail !== ''): ?>
             <section class="photo-detail" aria-labelledby="page-title">
                 <div class="detail-image-wrap">
-                    <a class="back-link" href="?page=roll-1">&larr; Roll 01</a>
+                    <a class="back-link" href="?page=<?= escape($roll) ?>">&larr; <?= escape($rollLabel) ?></a>
                     <img class="detail-image" src="<?= escape($photoUrl($detail)) ?>" alt="Photograph <?= $imageIndex + 1 ?>">
                 </div>
                 <div class="detail-copy">
-                    <p class="eyebrow">Roll 01 <span>/</span> Frame <?= sprintf('%02d', $imageIndex + 1) ?></p>
+                    <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> Frame <?= sprintf('%02d', $imageIndex + 1) ?></p>
                     <h1 id="page-title"><?= escape($detailData['title'] ?? 'Photograph') ?></h1>
                     <dl class="detail-meta">
                         <div><dt>Date</dt><dd><?= escape(metadataValue($detailData, 'date')) ?></dd></div>
@@ -121,20 +130,20 @@ function metadataValue(array $data, string $key): string
                     </dl>
                     <nav class="frame-nav" aria-label="Browse photographs">
                         <?php if ($imageIndex > 0): ?>
-                            <a href="?page=photo&amp;image=<?= $imageIndex - 1 ?>">&larr; Previous</a>
+                            <a href="?page=photo&amp;roll=<?= escape($roll) ?>&amp;image=<?= $imageIndex - 1 ?>">&larr; Previous</a>
                         <?php else: ?>
                             <span></span>
                         <?php endif; ?>
                         <span><?= sprintf('%02d', $imageIndex + 1) ?> / <?= sprintf('%02d', count($imageFiles)) ?></span>
                         <?php if ($imageIndex < count($imageFiles) - 1): ?>
-                            <a href="?page=photo&amp;image=<?= $imageIndex + 1 ?>">Next &rarr;</a>
+                            <a href="?page=photo&amp;roll=<?= escape($roll) ?>&amp;image=<?= $imageIndex + 1 ?>">Next &rarr;</a>
                         <?php else: ?>
                             <span></span>
                         <?php endif; ?>
                     </nav>
                 </div>
             </section>
-        <?php elseif ($page === 'about' || $page === 'roll-2' || $page === 'photo'): ?>
+        <?php elseif ($page === 'about' || $page === 'photo'): ?>
             <section class="placeholder-page" aria-labelledby="page-title">
                 <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
                 <p class="eyebrow">bea-utiful.co.uk <span>/</span> Photo Journal</p>
