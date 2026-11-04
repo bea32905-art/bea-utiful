@@ -7,15 +7,16 @@ function escape(string $value): string
 }
 
 $page = $_GET['page'] ?? 'home';
-$validPages = ['home', 'photography', 'journal', 'about', 'roll-1', 'roll-2', 'photo'];
+$validPages = ['home', 'photography', 'journal', 'about', 'roll-1', 'roll-2', 'roll-3', 'photo'];
 if (!in_array($page, $validPages, true)) {
     $page = 'home';
 }
 
-$roll = $page === 'roll-2' || ($page === 'photo' && ($_GET['roll'] ?? '') === 'roll-2')
-    ? 'roll-2'
-    : 'roll-1';
-$rollNumber = $roll === 'roll-2' ? 2 : 1;
+$availableRolls = ['roll-1', 'roll-2', 'roll-3'];
+$roll = in_array($page, $availableRolls, true)
+    ? $page
+    : (in_array($_GET['roll'] ?? '', $availableRolls, true) ? $_GET['roll'] : 'roll-1');
+$rollNumber = (int) substr($roll, strlen('roll-'));
 $rollLabel = sprintf('Roll %02d', $rollNumber);
 $photoDirectory = __DIR__ . '/photos/' . $roll;
 $metadataFile = $photoDirectory . '/metadata.json';
@@ -38,6 +39,7 @@ $rollTitles = [
     'about' => 'About',
     'roll-1' => 'Roll 01    ',
     'roll-2' => 'Roll 02',
+    'roll-3' => 'Roll 03',
     'photo' => 'Photo Journal',
 ];
 $title = $rollTitles[$page];
@@ -47,6 +49,25 @@ $detailData = is_array($imageDetails[$detail] ?? null) ? $imageDetails[$detail] 
 if ($detailData === [] && $roll === 'roll-2') {
     $metadataFilename = preg_replace('/ {2,}/', ' ', $detail);
     $detailData = is_array($imageDetails[$metadataFilename] ?? null) ? $imageDetails[$metadataFilename] : [];
+}
+
+$aboutParagraphs = [];
+if ($page === 'about') {
+    $aboutData = json_decode((string) file_get_contents(__DIR__ . '/about.json'), true, 512, JSON_THROW_ON_ERROR);
+    if (!is_array($aboutData) || !is_array($aboutData['paragraphs'] ?? null)) {
+        throw new UnexpectedValueException('about.json must contain a "paragraphs" array.');
+    }
+
+    foreach ($aboutData['paragraphs'] as $paragraph) {
+        if (!is_string($paragraph)) {
+            throw new UnexpectedValueException('Every About page paragraph must be a string.');
+        }
+
+        $paragraph = trim($paragraph);
+        if ($paragraph !== '') {
+            $aboutParagraphs[] = $paragraph;
+        }
+    }
 }
 
 function metadataValue(array $data, string $key): string
@@ -84,11 +105,12 @@ function metadataValue(array $data, string $key): string
                         <a class="link-button" href="?page=about"><span>About</span><span aria-hidden="true">&rarr;</span></a>
                         <a class="link-button" href="?page=roll-1"><span>Roll 1</span><span aria-hidden="true">&rarr;</span></a>
                         <a class="link-button" href="?page=roll-2"><span>Roll 2</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="link-button" href="?page=roll-3"><span>Roll 3</span><span aria-hidden="true">&rarr;</span></a>
                     <?php endif; ?>
                 </nav>
                 <a class="back-link" href="<?= $page === 'home' ? '?page=home' : ($page === 'photography' ? '?page=home' : '?page=photography') ?>">&larr; <?= $page === 'home' ? 'Home' : ($page === 'photography' ? 'Home' : 'Photography') ?></a>
             </section>
-        <?php elseif ($page === 'roll-1' || $page === 'roll-2'): ?>
+        <?php elseif (in_array($page, $availableRolls, true)): ?>
             <section class="roll-page" aria-labelledby="page-title">
                 <div class="page-heading">
                     <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
@@ -148,7 +170,15 @@ function metadataValue(array $data, string $key): string
                 <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
                 <p class="eyebrow">bea-utiful.co.uk <span>/</span> Photo Journal</p>
                 <h1 id="page-title"><?= escape($title) ?></h1>
-                <p class="placeholder-copy"><?= $page === 'about' ? 'some text' : 'some other text' ?></p>
+                <?php if ($page === 'about' && $aboutParagraphs): ?>
+                    <?php foreach ($aboutParagraphs as $paragraph): ?>
+                        <p class="placeholder-copy"><?= nl2br(escape($paragraph)) ?></p>
+                    <?php endforeach; ?>
+                <?php elseif ($page === 'about'): ?>
+                    <p class="placeholder-copy">Add your About page text to the paragraphs list in about.json.</p>
+                <?php else: ?>
+                    <p class="placeholder-copy">some other text</p>
+                <?php endif; ?>
                 <a class="link-button" href="?page=journal"><span>Back to Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
             </section>
         <?php endif; ?>

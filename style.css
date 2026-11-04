@@ -131,7 +131,7 @@ h1 {
 .link-button:focus-visible {
     border-color: var(--accent);
     background: var(--accent);
-    color: var(--white);
+    color: var(--eyebrow);
 }
 
 .link-button span:last-child {
@@ -198,7 +198,7 @@ h1 {
 .roll-meta dt,
 .detail-meta dt {
     margin-bottom: 7px;
-    color: var(--muted);
+    color: var(--eyebrow);
     font-size: 14px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -330,7 +330,7 @@ h1 {
 .placeholder-copy {
     max-width: 420px;
     margin: 24px 0 30px;
-    color: var(--muted);
+    color: var(--ink);
     font-family: var(--serif);
     font-size: 20px;
     line-height: 1.5;
