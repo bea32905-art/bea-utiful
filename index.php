@@ -7,18 +7,18 @@ function escape(string $value): string
 }
 
 $page = $_GET['page'] ?? 'home';
-$validPages = ['home', 'photography', 'journal', 'about', 'roll-1', 'roll-2', 'roll-3', 'photo'];
+$validPages = ['home', 'photography', 'journal', 'digital', 'about', 'roll-0', 'roll-1', 'roll-2', 'roll-3', 'photo'];
 if (!in_array($page, $validPages, true)) {
     $page = 'home';
 }
 
-$availableRolls = ['roll-1', 'roll-2', 'roll-3'];
+$availableRolls = ['roll-0', 'roll-1', 'roll-2', 'roll-3'];
 $roll = in_array($page, $availableRolls, true)
     ? $page
     : (in_array($_GET['roll'] ?? '', $availableRolls, true) ? $_GET['roll'] : 'roll-1');
 $rollNumber = (int) substr($roll, strlen('roll-'));
 $rollLabel = sprintf('Roll %02d', $rollNumber);
-$photoDirectory = __DIR__ . '/photos/' . $roll;
+$photoDirectory = __DIR__ . '/photos/photo journal/' . $roll;
 $metadataFile = $photoDirectory . '/metadata.json';
 $metadata = is_file($metadataFile)
     ? json_decode((string) file_get_contents($metadataFile), true)
@@ -36,20 +36,34 @@ $rollTitles = [
     'home' => 'Home',
     'photography' => 'Photography',
     'journal' => 'Photo Journal',
+    'digital' => 'Digital',
     'about' => 'About',
-    'roll-1' => 'Roll 01    ',
+    'roll-0' => 'Roll 00',
+    'roll-1' => 'Roll 01',
     'roll-2' => 'Roll 02',
     'roll-3' => 'Roll 03',
     'photo' => 'Photo Journal',
 ];
 $title = $rollTitles[$page];
-$photoUrl = static fn(string $filename): string => 'photos/' . $roll . '/' . rawurlencode($filename);
+$photoUrl = static fn(string $filename): string => 'photos/photo%20journal/' . $roll . '/' . rawurlencode($filename);
 $detail = $imageNames[$imageIndex] ?? '';
 $detailData = is_array($imageDetails[$detail] ?? null) ? $imageDetails[$detail] : [];
 if ($detailData === [] && $roll === 'roll-2') {
     $metadataFilename = preg_replace('/ {2,}/', ' ', $detail);
     $detailData = is_array($imageDetails[$metadataFilename] ?? null) ? $imageDetails[$metadataFilename] : [];
 }
+
+$digitalAlbumTitle = 'Solar Eclipse August 2026';
+$digitalAlbumSlug = 'solar-eclipse-august-2026';
+$digitalAlbumDirectory = __DIR__ . '/photos/digital/' . $digitalAlbumTitle;
+$showDigitalAlbum = $page === 'digital' && ($_GET['album'] ?? '') === $digitalAlbumSlug;
+$digitalImageFiles = [];
+if ($showDigitalAlbum) {
+    $digitalImageFiles = glob($digitalAlbumDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+    usort($digitalImageFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+    $digitalImageFiles = array_slice($digitalImageFiles, 0, 36);
+}
+$digitalPhotoUrl = static fn(string $filename): string => 'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/' . rawurlencode($filename);
 
 $aboutParagraphs = [];
 if ($page === 'about') {
@@ -101,8 +115,10 @@ function metadataValue(array $data, string $key): string
                         <a class="link-button" href="?page=photography"><span>Photography</span><span aria-hidden="true">&rarr;</span></a>
                     <?php elseif ($page === 'photography'): ?>
                         <a class="link-button" href="?page=journal"><span>Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="link-button" href="?page=digital"><span>Digital</span><span aria-hidden="true">&rarr;</span></a>
                     <?php else: ?>
                         <a class="link-button" href="?page=about"><span>About</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="link-button" href="?page=roll-0"><span>Roll 0</span><span aria-hidden="true">&rarr;</span></a>
                         <a class="link-button" href="?page=roll-1"><span>Roll 1</span><span aria-hidden="true">&rarr;</span></a>
                         <a class="link-button" href="?page=roll-2"><span>Roll 2</span><span aria-hidden="true">&rarr;</span></a>
                         <a class="link-button" href="?page=roll-3"><span>Roll 3</span><span aria-hidden="true">&rarr;</span></a>
@@ -164,6 +180,37 @@ function metadataValue(array $data, string $key): string
                         <?php endif; ?>
                     </nav>
                 </div>
+            </section>
+        <?php elseif ($page === 'digital' && $showDigitalAlbum): ?>
+            <section class="roll-page" aria-labelledby="page-title">
+                <div class="page-heading">
+                    <a class="back-link" href="?page=digital">&larr; Digital</a>
+                    <p class="eyebrow">Photography <span>/</span> Digital</p>
+                    <h1 id="page-title"><?= escape($digitalAlbumTitle) ?></h1>
+                </div>
+                <?php if ($digitalImageFiles): ?>
+                    <div class="photo-grid">
+                        <?php foreach ($digitalImageFiles as $index => $imageFile): ?>
+                            <div class="photo-tile">
+                                <img src="<?= escape($digitalPhotoUrl(basename($imageFile))) ?>" alt="<?= escape($digitalAlbumTitle) ?> photograph <?= $index + 1 ?>" loading="lazy">
+                                <span><?= sprintf('%02d', $index + 1) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="empty-state">No photographs have been added to this album yet.</p>
+                <?php endif; ?>
+            </section>
+        <?php elseif ($page === 'digital'): ?>
+            <section class="placeholder-page" aria-labelledby="page-title">
+                <a class="back-link" href="?page=photography">&larr; Photography</a>
+                <p class="eyebrow">Photography <span>/</span> Digital</p>
+                <h1 id="page-title"><?= escape($title) ?></h1>
+                <nav class="link-list" aria-label="Digital photo albums">
+                    <a class="link-button" href="?page=digital&amp;album=<?= escape($digitalAlbumSlug) ?>">
+                        <span><?= escape($digitalAlbumTitle) ?></span><span aria-hidden="true">&rarr;</span>
+                    </a>
+                </nav>
             </section>
         <?php elseif ($page === 'about' || $page === 'photo'): ?>
             <section class="placeholder-page" aria-labelledby="page-title">
