@@ -6,6 +6,28 @@ function escape(string $value): string
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function normalizeMetadataKey(string $value): string
+{
+    $normalized = preg_replace('/\s+/', ' ', trim($value));
+    return is_string($normalized) ? $normalized : trim($value);
+}
+
+function lookupImageDetails(array $imageDetails, string $filename): array
+{
+    if (isset($imageDetails[$filename]) && is_array($imageDetails[$filename])) {
+        return $imageDetails[$filename];
+    }
+
+    $normalizedFilename = normalizeMetadataKey($filename);
+    foreach ($imageDetails as $imageName => $details) {
+        if (is_array($details) && normalizeMetadataKey((string) $imageName) === $normalizedFilename) {
+            return $details;
+        }
+    }
+
+    return [];
+}
+
 $page = $_GET['page'] ?? 'home';
 $validPages = ['home', 'photography', 'journal', 'digital', 'about', 'roll-0', 'roll-1', 'roll-2', 'roll-3', 'photo'];
 if (!in_array($page, $validPages, true)) {
@@ -47,23 +69,28 @@ $rollTitles = [
 $title = $rollTitles[$page];
 $photoUrl = static fn(string $filename): string => 'photos/photo%20journal/' . $roll . '/' . rawurlencode($filename);
 $detail = $imageNames[$imageIndex] ?? '';
-$detailData = is_array($imageDetails[$detail] ?? null) ? $imageDetails[$detail] : [];
-if ($detailData === [] && $roll === 'roll-2') {
-    $metadataFilename = preg_replace('/ {2,}/', ' ', $detail);
-    $detailData = is_array($imageDetails[$metadataFilename] ?? null) ? $imageDetails[$metadataFilename] : [];
-}
+$detailData = lookupImageDetails($imageDetails, $detail);
 
 $digitalAlbumTitle = 'Solar Eclipse August 2026';
 $digitalAlbumSlug = 'solar-eclipse-august-2026';
 $digitalAlbumDirectory = __DIR__ . '/photos/digital/' . $digitalAlbumTitle;
 $showDigitalAlbum = $page === 'digital' && ($_GET['album'] ?? '') === $digitalAlbumSlug;
-$digitalImageFiles = [];
+$eclipseMetadata = [];
+$eclipsePosterFile = $digitalAlbumDirectory . '/eclipse a4.png';
+$digitalIndividualDirectory = $digitalAlbumDirectory . '/Individual';
+$digitalIndividualFiles = [];
 if ($showDigitalAlbum) {
-    $digitalImageFiles = glob($digitalAlbumDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
-    usort($digitalImageFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
-    $digitalImageFiles = array_slice($digitalImageFiles, 0, 36);
+    $eclipseMetadataFile = $digitalAlbumDirectory . '/metadata.json';
+    $eclipseMetadata = is_file($eclipseMetadataFile)
+        ? json_decode((string) file_get_contents($eclipseMetadataFile), true)
+        : [];
+    $eclipseMetadata = is_array($eclipseMetadata) ? $eclipseMetadata : [];
+    $digitalIndividualFiles = glob($digitalIndividualDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+    usort($digitalIndividualFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+    $digitalIndividualFiles = array_slice($digitalIndividualFiles, 0, 16);
 }
 $digitalPhotoUrl = static fn(string $filename): string => 'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/' . rawurlencode($filename);
+$digitalIndividualPhotoUrl = static fn(string $filename): string => 'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/Individual/' . rawurlencode($filename);
 
 $aboutParagraphs = [];
 if ($page === 'about') {
@@ -188,16 +215,22 @@ function metadataValue(array $data, string $key): string
                     <p class="eyebrow">Photography <span>/</span> Digital</p>
                     <h1 id="page-title"><?= escape($digitalAlbumTitle) ?></h1>
                 </div>
-                <?php if ($digitalImageFiles): ?>
-                    <div class="photo-grid">
-                        <?php foreach ($digitalImageFiles as $index => $imageFile): ?>
-                            <div class="photo-tile">
-                                <img src="<?= escape($digitalPhotoUrl(basename($imageFile))) ?>" alt="<?= escape($digitalAlbumTitle) ?> photograph <?= $index + 1 ?>" loading="lazy">
-                                <span><?= sprintf('%02d', $index + 1) ?></span>
+                <section class="eclipse-notes" aria-labelledby="eclipse-notes-title">
+                    <h2 id="eclipse-notes-title">Notes</h2>
+                    <p><?= nl2br(escape(metadataValue($eclipseMetadata, 'notes'))) ?></p>
+                </section>
+                <?php if (is_file($eclipsePosterFile)): ?>
+                    <img class="eclipse-poster" src="<?= escape($digitalPhotoUrl('eclipse a4.png')) ?>" alt="Solar eclipse A4 artwork">
+                <?php endif; ?>
+                <?php if ($digitalIndividualFiles): ?>
+                    <div class="eclipse-grid" aria-label="Individual solar eclipse photographs">
+                        <?php foreach ($digitalIndividualFiles as $index => $imageFile): ?>
+                            <div class="eclipse-tile">
+                                <img src="<?= escape($digitalIndividualPhotoUrl(basename($imageFile))) ?>" alt="Solar eclipse photograph <?= $index + 1 ?>" loading="lazy">
                             </div>
                         <?php endforeach; ?>
                     </div>
-                <?php else: ?>
+                <?php elseif (!is_file($eclipsePosterFile)): ?>
                     <p class="empty-state">No photographs have been added to this album yet.</p>
                 <?php endif; ?>
             </section>

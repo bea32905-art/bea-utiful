@@ -10,7 +10,7 @@ Edit each roll's `metadata.json` to add film type, start and end dates, roll not
 
 ## Digital photographs
 
-Digital photo albums live in their own folders under `photos/digital/`. Add images for the Solar Eclipse album to `photos/digital/Solar Eclipse August 2026/`; the album is linked from the Digital page and displays up to 36 images in natural filename order.
+Digital photo albums live in their own folders under `photos/digital/`. The Solar Eclipse album displays notes from `photos/digital/Solar Eclipse August 2026/metadata.json`, the `eclipse a4.png` artwork, and up to 16 images in natural filename order from its `Individual/` folder.
 
 ## Write the About page
 

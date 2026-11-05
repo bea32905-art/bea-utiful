@@ -222,6 +222,60 @@ h1 {
     column-gap: 14px;
 }
 
+.eclipse-notes {
+    max-width: 720px;
+    margin: 28px 0;
+    padding: 14px 18px;
+    border-left: 3px solid var(--accent);
+    background: var(--white);
+}
+
+.eclipse-notes h2 {
+    margin: 0 0 6px;
+    color: var(--eyebrow);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.eclipse-notes p {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.eclipse-poster {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 24px;
+}
+
+.eclipse-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.eclipse-tile {
+    overflow: hidden;
+    background: #d3dbd6;
+}
+
+.eclipse-tile img {
+    width: 100%;
+    aspect-ratio: 1;
+    display: block;
+    object-fit: cover;
+    transition: transform 250ms ease;
+}
+
+.eclipse-tile:hover img {
+    transform: scale(1.035);
+}
+
 .photo-tile {
     position: relative;
     display: inline-block;
@@ -379,6 +433,11 @@ h1 {
     .photo-grid {
         columns: 2;
         column-gap: 8px;
+    }
+
+    .eclipse-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
     }
 
     .photo-tile {
