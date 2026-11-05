@@ -29,7 +29,7 @@ function lookupImageDetails(array $imageDetails, string $filename): array
 }
 
 $page = $_GET['page'] ?? 'home';
-$validPages = ['home', 'photography', 'journal', 'digital', 'about', 'roll-0', 'roll-1', 'roll-2', 'roll-3', 'photo'];
+$validPages = ['home', 'photography', 'journal', 'digital', 'about', 'about-me', 'roll-0', 'roll-1', 'roll-2', 'roll-3', 'photo'];
 if (!in_array($page, $validPages, true)) {
     $page = 'home';
 }
@@ -60,6 +60,7 @@ $rollTitles = [
     'journal' => 'Photo Journal',
     'digital' => 'Digital',
     'about' => 'About',
+    'about-me' => 'About Me',
     'roll-0' => 'Roll 00',
     'roll-1' => 'Roll 01',
     'roll-2' => 'Roll 02',
@@ -93,10 +94,11 @@ $digitalPhotoUrl = static fn(string $filename): string => 'photos/digital/' . ra
 $digitalIndividualPhotoUrl = static fn(string $filename): string => 'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/Individual/' . rawurlencode($filename);
 
 $aboutParagraphs = [];
-if ($page === 'about') {
-    $aboutData = json_decode((string) file_get_contents(__DIR__ . '/about.json'), true, 512, JSON_THROW_ON_ERROR);
+if (in_array($page, ['about', 'about-me'], true)) {
+    $aboutFile = $page === 'about-me' ? 'about-me.json' : 'about.json';
+    $aboutData = json_decode((string) file_get_contents(__DIR__ . '/' . $aboutFile), true, 512, JSON_THROW_ON_ERROR);
     if (!is_array($aboutData) || !is_array($aboutData['paragraphs'] ?? null)) {
-        throw new UnexpectedValueException('about.json must contain a "paragraphs" array.');
+        throw new UnexpectedValueException($aboutFile . ' must contain a "paragraphs" array.');
     }
 
     foreach ($aboutData['paragraphs'] as $paragraph) {
@@ -140,6 +142,7 @@ function metadataValue(array $data, string $key): string
                 <nav class="link-list" aria-label="Explore">
                     <?php if ($page === 'home'): ?>
                         <a class="link-button" href="?page=photography"><span>Photography</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="link-button" href="?page=about-me"><span>About Me</span><span aria-hidden="true">&rarr;</span></a>
                     <?php elseif ($page === 'photography'): ?>
                         <a class="link-button" href="?page=journal"><span>Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
                         <a class="link-button" href="?page=digital"><span>Digital</span><span aria-hidden="true">&rarr;</span></a>
@@ -245,10 +248,36 @@ function metadataValue(array $data, string $key): string
                     </a>
                 </nav>
             </section>
+        <?php elseif ($page === 'about-me'): ?>
+            <section class="about-me-page" aria-labelledby="page-title">
+                <header class="about-me-heading">
+                    <a class="back-link" href="?page=home">&larr; Home</a>
+                    <p class="eyebrow">bea-utiful.me <span>/</span> About Me</p>
+                    <h1 id="page-title"><?= escape($title) ?></h1>
+                </header>
+                <figure class="about-me-photo">
+                    <?php if (is_file(__DIR__ . '/about-me.jpeg')): ?>
+                        <img src="about-me.jpeg" alt="Portrait">
+                    <?php else: ?>
+                        <div class="about-me-photo-placeholder" role="img" aria-label="Portrait photo placeholder">
+                            <span>Add a portrait as about-me.jpeg</span>
+                        </div>
+                    <?php endif; ?>
+                </figure>
+                <section class="about-me-text" aria-label="About me">
+                    <?php if ($aboutParagraphs): ?>
+                        <?php foreach ($aboutParagraphs as $paragraph): ?>
+                            <p class="placeholder-copy"><?= nl2br(escape($paragraph)) ?></p>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="placeholder-copy">Add your introduction to about-me.json.</p>
+                    <?php endif; ?>
+                </section>
+            </section>
         <?php elseif ($page === 'about' || $page === 'photo'): ?>
             <section class="placeholder-page" aria-labelledby="page-title">
                 <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
-                <p class="eyebrow">bea-utiful.co.uk <span>/</span> Photo Journal</p>
+                <p class="eyebrow">bea-utiful.me <span>/</span> <?= escape($title) ?></p>
                 <h1 id="page-title"><?= escape($title) ?></h1>
                 <?php if ($page === 'about' && $aboutParagraphs): ?>
                     <?php foreach ($aboutParagraphs as $paragraph): ?>
@@ -259,7 +288,7 @@ function metadataValue(array $data, string $key): string
                 <?php else: ?>
                     <p class="placeholder-copy">some other text</p>
                 <?php endif; ?>
-                <a class="link-button" href="?page=journal"><span>Back to Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
+                <a class="link-button" href="?page=journal"><span>Explore Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
             </section>
         <?php endif; ?>
     </main>

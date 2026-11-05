@@ -12,9 +12,11 @@ Edit each roll's `metadata.json` to add film type, start and end dates, roll not
 
 Digital photo albums live in their own folders under `photos/digital/`. The Solar Eclipse album displays notes from `photos/digital/Solar Eclipse August 2026/metadata.json`, the `eclipse a4.png` artwork, and up to 16 images in natural filename order from its `Individual/` folder.
 
-## Write the About page
+## About pages
 
-Edit `about.json` and add each paragraph as a string in its `paragraphs` array. For example:
+The Photo Journal's **About** page describes the project. Edit `about.json` and add each paragraph as a string in its `paragraphs` array. The Home page's **About Me** page has separate text in `about-me.json` and a portrait image named `about-me.jpeg` beside `index.php`.
+
+For either JSON file, add paragraphs as strings in its `paragraphs` array. For example:
 
 ```json
 {
