@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Photo book generator for bea-utiful.
  *
  * Renders a print-ready, paginated "webpage that's printed" using Paged.js:
- * one page per day — photograph on top, haiku set beneath, notes in the margin.
+ * A4 landscape — photograph on the left, haiku and notes on the right.
  *
  * Usage:
  *   book.php                      -> latest month that has featured photos
@@ -13,8 +13,8 @@ declare(strict_types=1);
  *   book.php?roll=roll-2          -> whole roll in frame order
  *   book.php?month=2026-10&draft  -> prints ALL dated photos, ignores featured
  *
- * Output: print from the browser (Ctrl+P -> Save as PDF, A5, no margins,
- * background graphics ON). The resulting PDF is what you send to the printer.
+ * Output: print from the browser (Ctrl+P -> Save as PDF, A4 landscape,
+ * margins: none, background graphics ON). Send that PDF to the printer.
  */
 
 function escape(string $value): string
@@ -56,7 +56,7 @@ function loadJsonFile(string $path): array
 /* ---- Collect every image with metadata across all rolls ---- */
 
 $journalDirectory = __DIR__ . '/photos/photo journal';
-$entries = [];     // one per image with usable metadata, keyed by nothing in particular
+$entries = [];
 $rollNumbers = [];
 
 foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDir) {
@@ -70,7 +70,6 @@ foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDir) {
     $metadata = loadJsonFile($rollDir . '/metadata.json');
     $imageDetails = is_array($metadata['images'] ?? null) ? $metadata['images'] : [];
 
-    // Preserve natural frame order within the roll.
     $files = glob($rollDir . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
     usort($files, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
 
@@ -78,7 +77,6 @@ foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDir) {
         $filename = basename($file);
         $details = $imageDetails[$filename] ?? null;
         if (!is_array($details)) {
-            // Metadata keys should match filenames, but be forgiving.
             foreach ($imageDetails as $key => $candidate) {
                 if (is_array($candidate) && normalizeMetadataKey((string) $key) === normalizeMetadataKey($filename)) {
                     $details = $candidate;
@@ -144,7 +142,6 @@ if ($rollParam !== '' && isset($rollNumbers[$rollParam])) {
         usort($chosen, static fn(array $a, array $b): int => [$a['date'], $a['roll_number'], $a['frame']] <=> [$b['date'], $b['roll_number'], $b['frame']]);
         $selected = $chosen;
 
-        [$year, $month] = array_pad(explode('-', $monthParam), 2, '01');
         $bookTitle = DateTime::createFromFormat('!Y-m', $monthParam)?->format('F Y') ?: $monthParam;
         $bookSubtitle = count($selected) . ' ' . (count($selected) === 1 ? 'day' : 'days');
     }
@@ -170,7 +167,6 @@ function displayDay(array $entry): string
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= escape($bookTitle) ?> — Photo Book | bea-utiful</title>
 
-    <!-- Book typography: closer to the site's serif feel, web-safe -->
     <style>
         :root {
             --paper: #ffffff;
@@ -185,10 +181,9 @@ function displayDay(array $entry): string
         }
 
         /*
-         * Page geometry. A5 portrait fits a 3:2 landscape frame nicely:
-         * 138mm of printable width leaves room for the haiku below.
-         * Change @page size + --page-* together if your printer's trim
-         * differs (e.g. 6in x 8in for Blurb's small landscape format).
+         * Page geometry. A4 landscape: 297mm wide, 210mm tall.
+         * With 16mm side / 14+16mm top-bottom margins the content box
+         * is 265mm x 180mm — .cover and .colophon must not exceed 180mm.
          */
         @page {
             size: A4 landscape;
@@ -207,7 +202,6 @@ function displayDay(array $entry): string
             color: var(--ink);
         }
 
-        /* --- Pages rendered by Paged.js land in .pagedjs_page --- */
         .pagedjs_page {
             background: var(--paper);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
@@ -231,7 +225,7 @@ function displayDay(array $entry): string
 
         /* ---------- Cover ---------- */
         .cover {
-            height: 182mm;
+            height: 180mm;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -251,7 +245,7 @@ function displayDay(array $entry): string
         }
 
         .cover h1 {
-            font-size: 34pt;
+            font-size: 40pt;
             font-weight: 400;
             line-height: 1.05;
             margin: 0 0 8mm;
@@ -270,12 +264,19 @@ function displayDay(array $entry): string
             margin-top: 10mm;
         }
 
-        /* ---------- Day pages ---------- */
+        /* ---------- Day pages: image left, text right ---------- */
         .day {
             page-break-after: always;
             break-after: page;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "date    date"
+                "frame   haiku"
+                "frame   footnote";
+            column-gap: 10mm;
+            row-gap: 5mm;
             height: 100%;
         }
 
@@ -284,21 +285,8 @@ function displayDay(array $entry): string
             break-after: auto;
         }
 
-        .day .frame {
-            background: var(--paper);
-            margin: 0 0 6mm;
-            text-align: right;
-        }
-
-        .day .frame img {
-            max-width: 100%;
-            max-height: 110mm;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-        }
-
         .day .date-line {
+            grid-area: date;
             font-family: var(--sans);
             font-size: 8.5pt;
             letter-spacing: 0.14em;
@@ -306,7 +294,6 @@ function displayDay(array $entry): string
             color: var(--eyebrow);
             border-bottom: 0.4mm solid var(--line);
             padding-bottom: 2.5mm;
-            margin: 0 0 5mm;
             display: flex;
             justify-content: space-between;
         }
@@ -315,15 +302,30 @@ function displayDay(array $entry): string
             color: var(--ink-soft);
         }
 
-        /* The haiku: centred, spaced, the typographic heart of the page. */
+        .day .frame {
+            grid-area: frame;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .day .frame img {
+            max-width: 100%;
+            max-height: 150mm;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
         .day .haiku {
-            flex: 1;
+            grid-area: haiku;
             display: flex;
             flex-direction: column;
-            justify-content: right;
-            align-items: right;
+            justify-content: center;
+            align-items: flex-end;
             text-align: right;
-            font-size: 13.5pt;
+            font-size: 15pt;
             line-height: 1.9;
             margin: 0;
         }
@@ -332,32 +334,33 @@ function displayDay(array $entry): string
             display: block;
         }
 
-        /* Undated/photo-only pages without a poem keep their balance. */
-        .day .haiku-empty {
-            flex: 1;
-        }
-
         .day .footnote {
+            grid-area: footnote;
             font-family: var(--sans);
             font-size: 8pt;
             color: var(--ink-soft);
-            border-top: 0.4mm solid var(--line);
+            border-top: 1mm solid var(--accent);
             padding-top: 2.5mm;
             margin: 0;
+            align-self: end;
         }
 
-        /* Back page */
+        /* Days with no poem keep the grid intact; the haiku cell stays empty. */
+
+        /* ---------- Back page ---------- */
         .colophon {
-            height: 182mm;
+            height: 180mm;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
             text-align: center;
             color: var(--ink-soft);
             font-size: 10pt;
             line-height: 1.8;
         }
 
+        /* ---------- Screen-only print bar ---------- */
         .no-print-ui {
             position: fixed;
             top: 0;
@@ -419,7 +422,7 @@ function displayDay(array $entry): string
 </head>
 <body>
     <div class="no-print-ui" id="print-bar" style="visibility: hidden;">
-        <span>Photo book ready — print to PDF (A5, margins: none, background graphics: on)</span>
+        <span>Photo book ready — print to PDF (A4 landscape, margins: none, background graphics: on)</span>
         <button id="print-btn">Print</button>
     </div>
 
@@ -450,8 +453,6 @@ function displayDay(array $entry): string
                 </figure>
                 <?php if ($entry['haiku'] !== []): ?>
                     <p class="haiku"><?php foreach ($entry['haiku'] as $line): ?><span class="line"><?= escape($line) ?></span><?php endforeach; ?></p>
-                <?php else: ?>
-                    <div class="haiku-empty"></div>
                 <?php endif; ?>
                 <?php if ($entry['notes'] !== ''): ?>
                     <p class="footnote"><?= escape($entry['notes']) ?></p>
