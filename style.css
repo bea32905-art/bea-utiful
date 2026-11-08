@@ -2,11 +2,14 @@
     color-scheme: light;
     --paper: #f2f4f1;
     --ink: #20211f;
+    --ink-soft: #6a6f63;
     --muted: #e5e9e3;
     --line: #d8dfd6;
     --accent: #ffc922;
-    --accent-dark: #ffba00;
-    --eyebrow: #008000;
+    --accent-dark: #d98f00;
+    --eyebrow: #0b6b0b;
+    --tile: #d3dbd6;
+    --scrim: rgba(29, 41, 37, 0.8);
     --white: #fbfcfa;
     --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
     --sans: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
@@ -59,7 +62,7 @@ a {
 }
 
 .wordmark span {
-    color: var(--accent);
+    color: var(--accent-dark);
 }
 
 .header-note,
@@ -73,7 +76,7 @@ a {
 
 .header-note,
 .site-footer {
-    color: var(--muted);
+    color: var(--ink-soft);
 }
 
 main {
@@ -89,13 +92,13 @@ main {
 }
 
 .eyebrow {
-    margin: 0 0 22px;
+    margin: 0 0 24px;
     color: var(--eyebrow);
 }
 
 .eyebrow span {
     padding-inline: 8px;
-    color: var(--muted);
+    color: var(--ink-soft);
 }
 
 h1 {
@@ -108,12 +111,12 @@ h1 {
 
 .link-list {
     display: grid;
-    gap: 10px;
+    gap: 8px;
     margin-top: 48px;
 }
 
 .link-button {
-    min-height: 66px;
+    min-height: 64px;
     padding: 0 20px;
     border: 1px solid var(--ink);
     background: var(--white);
@@ -127,11 +130,12 @@ h1 {
     transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
+/* Accent stays as a fill only — dark ink text on yellow passes contrast. */
 .link-button:hover,
 .link-button:focus-visible {
-    border-color: var(--accent);
+    border-color: var(--accent-dark);
     background: var(--accent);
-    color: var(--eyebrow);
+    color: var(--ink);
 }
 
 .link-button span:last-child {
@@ -141,19 +145,20 @@ h1 {
 
 .back-link {
     width: fit-content;
-    color: var(--muted);
+    color: var(--ink-soft);
     text-decoration-thickness: 1px;
     text-underline-offset: 4px;
 }
 
 .back-link:hover,
 .back-link:focus-visible {
-    color: var(--accent-dark);
+    color: var(--ink);
+    text-decoration-color: var(--accent-dark);
 }
 
 .link-page > .back-link {
     display: inline-block;
-    margin-top: 34px;
+    margin-top: 32px;
 }
 
 .site-footer {
@@ -169,7 +174,7 @@ h1 {
 
 .page-heading .back-link {
     display: inline-block;
-    margin-bottom: 38px;
+    margin-bottom: 40px;
 }
 
 .page-heading .eyebrow {
@@ -181,13 +186,13 @@ h1 {
 }
 
 .roll-meta {
-    margin: 34px 0 44px;
+    margin: 32px 0 48px;
     padding: 20px 0;
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px 30px;
+    gap: 20px 32px;
 }
 
 .roll-meta div,
@@ -197,7 +202,7 @@ h1 {
 
 .roll-meta dt,
 .detail-meta dt {
-    margin-bottom: 7px;
+    margin-bottom: 8px;
     color: var(--eyebrow);
     font-size: 14px;
     letter-spacing: 0.1em;
@@ -217,21 +222,22 @@ h1 {
     grid-column: 1 / -1;
 }
 
+/* Adaptive column count: fills naturally between breakpoints. */
 .photo-grid {
-    columns: 3;
-    column-gap: 14px;
+    columns: 480px;
+    column-gap: 16px;
 }
 
 .eclipse-notes {
     max-width: 720px;
-    margin: 28px 0;
-    padding: 14px 18px;
+    margin: 32px 0;
+    padding: 16px 20px;
     border-left: 3px solid var(--accent);
     background: var(--white);
 }
 
 .eclipse-notes h2 {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     color: var(--eyebrow);
     font-size: 13px;
     font-weight: 600;
@@ -256,12 +262,12 @@ h1 {
 .eclipse-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
 }
 
 .eclipse-tile {
     overflow: hidden;
-    background: #d3dbd6;
+    background: var(--tile);
 }
 
 .eclipse-tile img {
@@ -280,10 +286,10 @@ h1 {
     position: relative;
     display: inline-block;
     width: 100%;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     overflow: hidden;
     break-inside: avoid;
-    background: #d3dbd6;
+    background: var(--tile);
 }
 
 .photo-tile img {
@@ -299,10 +305,10 @@ h1 {
 
 .photo-tile > span {
     position: absolute;
-    right: 9px;
+    right: 8px;
     bottom: 8px;
-    padding: 4px 6px;
-    background: rgba(29, 41, 37, 0.8);
+    padding: 4px 8px;
+    background: var(--scrim);
     color: white;
     font-size: 14px;
 }
@@ -310,7 +316,7 @@ h1 {
 .empty-state {
     min-height: 260px;
     border: 1px dashed var(--line);
-    color: var(--muted);
+    color: var(--ink-soft);
     display: grid;
     place-items: center;
     font-family: var(--serif);
@@ -321,10 +327,10 @@ h1 {
 .photo-detail {
     width: min(100% - 64px, 1440px);
     margin: auto;
-    padding-block: 54px;
+    padding-block: 56px;
     display: grid;
     grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
-    gap: clamp(36px, 7vw, 108px);
+    gap: clamp(36px, 7vw, 104px);
     align-items: center;
 }
 
@@ -338,7 +344,7 @@ h1 {
     max-height: 72vh;
     display: block;
     object-fit: contain;
-    background: #d3dbd6;
+    background: var(--tile);
 }
 
 .detail-copy h1 {
@@ -346,9 +352,9 @@ h1 {
 }
 
 .detail-meta {
-    margin: 32px 0 42px;
+    margin: 32px 0 40px;
     display: grid;
-    gap: 22px;
+    gap: 24px;
 }
 
 .frame-nav {
@@ -357,8 +363,8 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    color: var(--muted);
+    gap: 16px;
+    color: var(--ink-soft);
     font-size: 14px;
 }
 
@@ -369,7 +375,10 @@ h1 {
 
 .frame-nav a:hover,
 .frame-nav a:focus-visible {
-    color: var(--accent-dark);
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--accent-dark);
+    text-underline-offset: 4px;
 }
 
 .placeholder-page {
@@ -394,7 +403,7 @@ h1 {
 
 .about-me-photo {
     width: min(100%, 720px);
-    margin: 32px 0 0;
+    margin-top: 32px;
 }
 
 .about-me-photo-placeholder {
@@ -405,7 +414,7 @@ h1 {
     padding: 24px;
     border: 1px dashed var(--line);
     background: var(--muted);
-    color: var(--eyebrow);
+    color: var(--ink-soft);
     font-family: var(--serif);
     font-size: 18px;
     text-align: center;
@@ -430,12 +439,12 @@ h1 {
 
 .placeholder-page > .back-link {
     display: inline-block;
-    margin-bottom: 54px;
+    margin-bottom: 56px;
 }
 
 .placeholder-copy {
     max-width: 420px;
-    margin: 24px 0 30px;
+    margin: 24px 0 32px;
     color: var(--ink);
     font-family: var(--serif);
     font-size: 20px;
@@ -447,9 +456,11 @@ h1 {
 }
 
 :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--ink);
     outline-offset: 4px;
 }
+
+/* ---- Responsive ---- */
 
 @media (max-width: 760px) {
     .site-header,
@@ -480,11 +491,10 @@ h1 {
 
     .roll-meta {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 18px;
+        gap: 16px 24px;
     }
 
     .photo-grid {
-        columns: 2;
         column-gap: 8px;
     }
 
@@ -545,6 +555,49 @@ h1 {
     }
 
     .site-footer {
-        font-size: 9px;
+        font-size: 11px;
+    }
+}
+
+/* ---- Print: shared base for browser printing and the Paged.js book layout ---- */
+
+@media print {
+    html,
+    body {
+        background: white;
+    }
+
+    body {
+        color: var(--ink);
+        background-image: none;
+        display: block;
+    }
+
+    .site-header,
+    .site-footer,
+    .back-link,
+    .frame-nav {
+        display: none;
+    }
+
+    .link-button {
+        transition: none;
+    }
+
+    .photo-tile:hover img,
+    .eclipse-tile:hover img,
+    .photo-tile:focus-visible img {
+        transform: none;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    /* Keep colours as authored (fills, scrims) rather than letting the
+       browser flatten them. */
+    * {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 }

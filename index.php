@@ -28,49 +28,157 @@ function lookupImageDetails(array $imageDetails, string $filename): array
     return [];
 }
 
+/**
+ * Stored dates are ISO (YYYY-MM-DD); render as DD/MM/YYYY for readers.
+ * Legacy or non-conforming values are displayed as-is rather than guessed at.
+ */
+function displayDate(?string $value): string
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return 'Not added yet';
+    }
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $matches)) {
+        return $matches[3] . '/' . $matches[2] . '/' . $matches[1];
+    }
+    return $value;
+}
+
+/**
+ * Returns the poem lines for an image. New schema: "haiku" array.
+ * Legacy "description" strings are tolerated until the remaining
+ * metadata files are migrated.
+ */
+function haikuLines(array $data): array
+{
+    if (isset($data['haiku']) && is_array($data['haiku'])) {
+        $lines = [];
+        foreach ($data['haiku'] as $line) {
+            $line = trim((string) $line);
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+        return $lines;
+    }
+
+    $legacyDescription = trim((string) ($data['description'] ?? ''));
+    return $legacyDescription !== '' ? [$legacyDescription] : [];
+}
+
+function metaValue(array $data, string $key): string
+{
+    $value = trim((string) ($data[$key] ?? ''));
+    return $value !== '' ? $value : 'Not added yet';
+}
+
+/**
+ * Discover rolls from the filesystem so new rolls appear automatically:
+ * create photos/photo journal/roll-N/, drop in scans and metadata.json, done.
+ */
+$journalDirectory = __DIR__ . '/photos/photo journal';
+$rolls = [];
+foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDirectoryPath) {
+    $rollName = basename((string) $rollDirectoryPath);
+    if (preg_match('/^roll-(\d+)$/', $rollName, $matches)) {
+        $rolls[$rollName] = [
+            'number' => (int) $matches[1],
+            'directory' => (string) $rollDirectoryPath,
+        ];
+    }
+}
+uasort($rolls, static fn(array $a, array $b): int => $a['number'] <=> $b['number']);
+
+$staticPages = ['home', 'photography', 'journal', 'digital', 'about', 'about-me', 'photo'];
 $page = $_GET['page'] ?? 'home';
-$validPages = ['home', 'photography', 'journal', 'digital', 'about', 'about-me', 'roll-0', 'roll-1', 'roll-2', 'roll-3', 'photo'];
+$validPages = array_merge($staticPages, array_keys($rolls));
 if (!in_array($page, $validPages, true)) {
     $page = 'home';
 }
 
-$availableRolls = ['roll-0', 'roll-1', 'roll-2', 'roll-3'];
-$roll = in_array($page, $availableRolls, true)
-    ? $page
-    : (in_array($_GET['roll'] ?? '', $availableRolls, true) ? $_GET['roll'] : 'roll-1');
-$rollNumber = (int) substr($roll, strlen('roll-'));
-$rollLabel = sprintf('Roll %02d', $rollNumber);
-$photoDirectory = __DIR__ . '/photos/photo journal/' . $roll;
-$metadataFile = $photoDirectory . '/metadata.json';
-$metadata = is_file($metadataFile)
-    ? json_decode((string) file_get_contents($metadataFile), true)
-    : [];
-$metadata = is_array($metadata) ? $metadata : [];
+$rollName = '';
+if (array_key_exists($page, $rolls)) {
+    $rollName = $page;
+} elseif ($page === 'photo') {
+    $requestedRoll = (string) ($_GET['roll'] ?? '');
+    $rollName = isset($rolls[$requestedRoll]) ? $requestedRoll : (array_key_last($rolls) ?: '');
+}
 
-$imageFiles = glob($photoDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
-usort($imageFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
-$imageFiles = array_slice($imageFiles, 0, 36);
-$imageNames = array_map('basename', $imageFiles);
-$imageIndex = filter_var($_GET['image'] ?? 0, FILTER_VALIDATE_INT);
-$imageIndex = max(0, min((int) $imageIndex, max(0, count($imageFiles) - 1)));
+$rollLabel = $rollName !== '' ? sprintf('Roll %02d', $rolls[$rollName]['number']) : '';
+$rollDirectory = $rollName !== '' ? $rolls[$rollName]['directory'] : '';
+
+$metadata = [];
+if ($rollDirectory !== '') {
+    $metadataFile = $rollDirectory . '/metadata.json';
+    if (is_file($metadataFile)) {
+        $decoded = json_decode((string) file_get_contents($metadataFile), true);
+        if (is_array($decoded)) {
+            $metadata = $decoded;
+        }
+    }
+}
 $imageDetails = is_array($metadata['images'] ?? null) ? $metadata['images'] : [];
-$rollTitles = [
+
+$imageFiles = glob($rollDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+usort($imageFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+$imageNames = array_map('basename', $imageFiles);
+
+/*
+ * Permalinks are filename-keyed so they survive re-scans, removals and
+ * reordering. Legacy ?image=N URLs still resolve (redirected to the
+ * filename form implicitly) so old links keep working.
+ */
+$nameIndex = array_flip($imageNames);
+$photoParam = trim((string) ($_GET['photo'] ?? ''));
+$photoKey = '';
+$photoIndex = 0;
+
+if ($photoParam !== '') {
+    if (isset($nameIndex[$photoParam])) {
+        $photoKey = $photoParam;
+    } else {
+        foreach ($imageNames as $name) {
+            if (normalizeMetadataKey($name) === normalizeMetadataKey($photoParam)) {
+                $photoKey = $name;
+                break;
+            }
+        }
+    }
+    if ($photoKey !== '') {
+        $photoIndex = $nameIndex[$photoKey];
+    }
+}
+
+$legacyIndex = filter_var($_GET['image'] ?? false, FILTER_VALIDATE_INT);
+if ($photoKey === '' && $legacyIndex !== false && $imageNames !== []) {
+    $photoIndex = max(0, min($legacyIndex, count($imageNames) - 1));
+    $photoKey = $imageNames[$photoIndex];
+}
+
+$detail = $photoKey;
+$detailData = $detail !== '' ? lookupImageDetails($imageDetails, $detail) : [];
+$detailLines = haikuLines($detailData);
+$detailFrameLabel = sprintf('Frame %02d', $photoIndex + 1);
+$detailTitle = trim((string) ($detailData['title'] ?? '')) !== ''
+    ? (string) $detailData['title']
+    : $detailFrameLabel;
+$photoUrl = static fn(string $filename): string =>
+    'photos/photo%20journal/' . $rollName . '/' . rawurlencode($filename);
+$detailPhotoHref = static fn(string $filename): string =>
+    '?page=photo&amp;roll=' . escape($rollName) . '&amp;photo=' . rawurlencode($filename);
+
+$pageTitles = [
     'home' => 'Home',
     'photography' => 'Photography',
     'journal' => 'Photo Journal',
     'digital' => 'Digital',
     'about' => 'About',
     'about-me' => 'About Me',
-    'roll-0' => 'Roll 00',
-    'roll-1' => 'Roll 01',
-    'roll-2' => 'Roll 02',
-    'roll-3' => 'Roll 03',
     'photo' => 'Photo Journal',
 ];
-$title = $rollTitles[$page];
-$photoUrl = static fn(string $filename): string => 'photos/photo%20journal/' . $roll . '/' . rawurlencode($filename);
-$detail = $imageNames[$imageIndex] ?? '';
-$detailData = lookupImageDetails($imageDetails, $detail);
+$title = $page === 'photo'
+    ? $rollLabel . ' &middot; ' . $detailFrameLabel
+    : ($rollLabel !== '' ? $rollLabel : ($pageTitles[$page] ?? 'Home'));
 
 $digitalAlbumTitle = 'Solar Eclipse August 2026';
 $digitalAlbumSlug = 'solar-eclipse-august-2026';
@@ -82,16 +190,20 @@ $digitalIndividualDirectory = $digitalAlbumDirectory . '/Individual';
 $digitalIndividualFiles = [];
 if ($showDigitalAlbum) {
     $eclipseMetadataFile = $digitalAlbumDirectory . '/metadata.json';
-    $eclipseMetadata = is_file($eclipseMetadataFile)
-        ? json_decode((string) file_get_contents($eclipseMetadataFile), true)
-        : [];
-    $eclipseMetadata = is_array($eclipseMetadata) ? $eclipseMetadata : [];
+    if (is_file($eclipseMetadataFile)) {
+        $decoded = json_decode((string) file_get_contents($eclipseMetadataFile), true);
+        if (is_array($decoded)) {
+            $eclipseMetadata = $decoded;
+        }
+    }
     $digitalIndividualFiles = glob($digitalIndividualDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
     usort($digitalIndividualFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
     $digitalIndividualFiles = array_slice($digitalIndividualFiles, 0, 16);
 }
-$digitalPhotoUrl = static fn(string $filename): string => 'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/' . rawurlencode($filename);
-$digitalIndividualPhotoUrl = static fn(string $filename): string => 'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/Individual/' . rawurlencode($filename);
+$digitalPhotoUrl = static fn(string $filename): string =>
+    'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/' . rawurlencode($filename);
+$digitalIndividualPhotoUrl = static fn(string $filename): string =>
+    'photos/digital/' . rawurlencode($digitalAlbumTitle) . '/Individual/' . rawurlencode($filename);
 
 $aboutParagraphs = [];
 if (in_array($page, ['about', 'about-me'], true)) {
@@ -105,18 +217,11 @@ if (in_array($page, ['about', 'about-me'], true)) {
         if (!is_string($paragraph)) {
             throw new UnexpectedValueException('Every About page paragraph must be a string.');
         }
-
         $paragraph = trim($paragraph);
         if ($paragraph !== '') {
             $aboutParagraphs[] = $paragraph;
         }
     }
-}
-
-function metadataValue(array $data, string $key): string
-{
-    $value = trim((string) ($data[$key] ?? ''));
-    return $value !== '' ? $value : 'Not added yet';
 }
 ?>
 <!doctype html>
@@ -124,7 +229,7 @@ function metadataValue(array $data, string $key): string
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f2f0e9">
+    <meta name="theme-color" content="#f2f4f1">
     <title><?= escape($title) ?> | bea-utiful</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -148,15 +253,14 @@ function metadataValue(array $data, string $key): string
                         <a class="link-button" href="?page=digital"><span>Digital</span><span aria-hidden="true">&rarr;</span></a>
                     <?php else: ?>
                         <a class="link-button" href="?page=about"><span>About</span><span aria-hidden="true">&rarr;</span></a>
-                        <a class="link-button" href="?page=roll-0"><span>Roll 0</span><span aria-hidden="true">&rarr;</span></a>
-                        <a class="link-button" href="?page=roll-1"><span>Roll 1</span><span aria-hidden="true">&rarr;</span></a>
-                        <a class="link-button" href="?page=roll-2"><span>Roll 2</span><span aria-hidden="true">&rarr;</span></a>
-                        <a class="link-button" href="?page=roll-3"><span>Roll 3</span><span aria-hidden="true">&rarr;</span></a>
+                        <?php foreach (array_reverse($rolls, true) as $rollLinkName => $rollInfo): ?>
+                            <a class="link-button" href="?page=<?= escape($rollLinkName) ?>"><span><?= escape(sprintf('Roll %02d', $rollInfo['number'])) ?></span><span aria-hidden="true">&rarr;</span></a>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </nav>
-                <a class="back-link" href="<?= $page === 'home' ? '?page=home' : ($page === 'photography' ? '?page=home' : '?page=photography') ?>">&larr; <?= $page === 'home' ? 'Home' : ($page === 'photography' ? 'Home' : 'Photography') ?></a>
+                <a class="back-link" href="<?= $page === 'home' ? '?page=home' : '?page=photography' ?>">&larr; <?= $page === 'home' ? 'Home' : 'Photography' ?></a>
             </section>
-        <?php elseif (in_array($page, $availableRolls, true)): ?>
+        <?php elseif (array_key_exists($page, $rolls)): ?>
             <section class="roll-page" aria-labelledby="page-title">
                 <div class="page-heading">
                     <a class="back-link" href="?page=journal">&larr; Photo Journal</a>
@@ -164,16 +268,23 @@ function metadataValue(array $data, string $key): string
                     <h1 id="page-title"><?= escape($rollLabel) ?></h1>
                 </div>
                 <dl class="roll-meta">
-                    <div><dt>Film Type</dt><dd><?= escape(metadataValue($metadata, 'film_type')) ?></dd></div>
-                    <div><dt>Start Date</dt><dd><?= escape(metadataValue($metadata, 'start_date')) ?></dd></div>
-                    <div><dt>End Date</dt><dd><?= escape(metadataValue($metadata, 'end_date')) ?></dd></div>
-                    <div class="roll-notes"><dt>Notes</dt><dd><?= nl2br(escape(metadataValue($metadata, 'notes'))) ?></dd></div>
+                    <div><dt>Film Type</dt><dd><?= escape(metaValue($metadata, 'film_type')) ?></dd></div>
+                    <div><dt>Start Date</dt><dd><?= escape(displayDate($metadata['start_date'] ?? null)) ?></dd></div>
+                    <div><dt>End Date</dt><dd><?= escape(displayDate($metadata['end_date'] ?? null)) ?></dd></div>
+                    <div class="roll-notes"><dt>Notes</dt><dd><?= nl2br(escape(metaValue($metadata, 'notes'))) ?></dd></div>
                 </dl>
-                <?php if ($imageFiles): ?>
+                <?php if ($imageNames): ?>
                     <div class="photo-grid" aria-label="Photographs in <?= escape($rollLabel) ?>">
                         <?php foreach ($imageNames as $index => $filename): ?>
-                            <a class="photo-tile" href="?page=photo&amp;roll=<?= escape($roll) ?>&amp;image=<?= $index ?>" aria-label="Open photograph <?= $index + 1 ?>">
-                                <img src="<?= escape($photoUrl($filename)) ?>" alt="Photograph <?= $index + 1 ?>" loading="lazy">
+                            <?php
+                            $tileData = lookupImageDetails($imageDetails, $filename);
+                            $tileLines = haikuLines($tileData);
+                            $tileAlt = $tileLines !== []
+                                ? implode(' ', $tileLines)
+                                : sprintf('Photograph %02d', $index + 1);
+                            ?>
+                            <a class="photo-tile" href="<?= $detailPhotoHref($filename) ?>" aria-label="Open <?= escape(sprintf('frame %02d', $index + 1)) ?>">
+                                <img src="<?= escape($photoUrl($filename)) ?>" alt="<?= escape($tileAlt) ?>" loading="lazy">
                                 <span><?= sprintf('%02d', $index + 1) ?></span>
                             </a>
                         <?php endforeach; ?>
@@ -185,26 +296,28 @@ function metadataValue(array $data, string $key): string
         <?php elseif ($page === 'photo' && $detail !== ''): ?>
             <section class="photo-detail" aria-labelledby="page-title">
                 <div class="detail-image-wrap">
-                    <a class="back-link" href="?page=<?= escape($roll) ?>">&larr; <?= escape($rollLabel) ?></a>
-                    <img class="detail-image" src="<?= escape($photoUrl($detail)) ?>" alt="Photograph <?= $imageIndex + 1 ?>">
+                    <a class="back-link" href="?page=<?= escape($rollName) ?>">&larr; <?= escape($rollLabel) ?></a>
+                    <img class="detail-image" src="<?= escape($photoUrl($detail)) ?>" alt="<?= escape($detailTitle) ?>">
                 </div>
                 <div class="detail-copy">
-                    <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> Frame <?= sprintf('%02d', $imageIndex + 1) ?></p>
-                    <h1 id="page-title"><?= escape($detailData['title'] ?? 'Photograph') ?></h1>
+                    <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> <?= escape($detailFrameLabel) ?></p>
+                    <h1 id="page-title"><?= escape($detailTitle) ?></h1>
                     <dl class="detail-meta">
-                        <div><dt>Date</dt><dd><?= escape(metadataValue($detailData, 'date')) ?></dd></div>
-                        <div><dt>Description</dt><dd><?= nl2br(escape(metadataValue($detailData, 'description'))) ?></dd></div>
-                        <div><dt>Notes</dt><dd><?= nl2br(escape(metadataValue($detailData, 'notes'))) ?></dd></div>
+                        <div><dt>Date</dt><dd><?= escape(displayDate($detailData['date'] ?? null)) ?></dd></div>
+                        <?php if ($detailLines): ?>
+                            <div><dt>Haiku</dt><dd class="haiku"><?php foreach ($detailLines as $line): ?><span class="haiku-line"><?= escape($line) ?></span><?php endforeach; ?></dd></div>
+                        <?php endif; ?>
+                        <div><dt>Notes</dt><dd><?= nl2br(escape(metaValue($detailData, 'notes'))) ?></dd></div>
                     </dl>
                     <nav class="frame-nav" aria-label="Browse photographs">
-                        <?php if ($imageIndex > 0): ?>
-                            <a href="?page=photo&amp;roll=<?= escape($roll) ?>&amp;image=<?= $imageIndex - 1 ?>">&larr; Previous</a>
+                        <?php if ($photoIndex > 0): ?>
+                            <a href="<?= $detailPhotoHref($imageNames[$photoIndex - 1]) ?>">&larr; Previous</a>
                         <?php else: ?>
                             <span></span>
                         <?php endif; ?>
-                        <span><?= sprintf('%02d', $imageIndex + 1) ?> / <?= sprintf('%02d', count($imageFiles)) ?></span>
-                        <?php if ($imageIndex < count($imageFiles) - 1): ?>
-                            <a href="?page=photo&amp;roll=<?= escape($roll) ?>&amp;image=<?= $imageIndex + 1 ?>">Next &rarr;</a>
+                        <span><?= sprintf('%02d', $photoIndex + 1) ?> / <?= sprintf('%02d', count($imageNames)) ?></span>
+                        <?php if ($photoIndex < count($imageNames) - 1): ?>
+                            <a href="<?= $detailPhotoHref($imageNames[$photoIndex + 1]) ?>">Next &rarr;</a>
                         <?php else: ?>
                             <span></span>
                         <?php endif; ?>
@@ -220,7 +333,7 @@ function metadataValue(array $data, string $key): string
                 </div>
                 <section class="eclipse-notes" aria-labelledby="eclipse-notes-title">
                     <h2 id="eclipse-notes-title">Notes</h2>
-                    <p><?= nl2br(escape(metadataValue($eclipseMetadata, 'notes'))) ?></p>
+                    <p><?= nl2br(escape(metaValue($eclipseMetadata, 'notes'))) ?></p>
                 </section>
                 <?php if (is_file($eclipsePosterFile)): ?>
                     <img class="eclipse-poster" src="<?= escape($digitalPhotoUrl('eclipse a4.png')) ?>" alt="Solar eclipse A4 artwork">
@@ -286,7 +399,7 @@ function metadataValue(array $data, string $key): string
                 <?php elseif ($page === 'about'): ?>
                     <p class="placeholder-copy">Add your About page text to the paragraphs list in about.json.</p>
                 <?php else: ?>
-                    <p class="placeholder-copy">some other text</p>
+                    <p class="placeholder-copy">This photograph could not be found. It may have been renamed &mdash; try opening the roll page again.</p>
                 <?php endif; ?>
                 <a class="link-button" href="?page=journal"><span>Explore Photo Journal</span><span aria-hidden="true">&rarr;</span></a>
             </section>
