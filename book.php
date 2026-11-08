@@ -152,7 +152,7 @@ if ($rollParam !== '' && isset($rollNumbers[$rollParam])) {
 
 $coverNote = match ($mode) {
     'roll' => 'Photo Journal / 35mm',
-    default => 'Photo Journal / One frame a day',
+    default => 'Photo Journal',
 };
 
 function displayDay(array $entry): string
@@ -191,7 +191,7 @@ function displayDay(array $entry): string
          * differs (e.g. 6in x 8in for Blurb's small landscape format).
          */
         @page {
-            size: A5;
+            size: A4 landscape;
             margin: 14mm 16mm 16mm;
         }
 
@@ -285,9 +285,9 @@ function displayDay(array $entry): string
         }
 
         .day .frame {
-            background: var(--tile);
+            background: var(--paper);
             margin: 0 0 6mm;
-            text-align: center;
+            text-align: right;
         }
 
         .day .frame img {
@@ -320,9 +320,9 @@ function displayDay(array $entry): string
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            justify-content: right;
+            align-items: right;
+            text-align: right;
             font-size: 13.5pt;
             line-height: 1.9;
             margin: 0;

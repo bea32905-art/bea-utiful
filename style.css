@@ -224,7 +224,7 @@ h1 {
 
 /* Adaptive column count: fills naturally between breakpoints. */
 .photo-grid {
-    columns: 480px;
+    columns: 240px;
     column-gap: 16px;
 }
 
@@ -344,7 +344,7 @@ h1 {
     max-height: 72vh;
     display: block;
     object-fit: contain;
-    background: var(--tile);
+    background: var(--paper);
 }
 
 .detail-copy h1 {
