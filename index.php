@@ -333,34 +333,36 @@ if (in_array($page, ['about', 'about-me'], true)) {
             </section>
         <?php elseif ($page === 'photo' && $detail !== ''): ?>
             <section class="photo-detail" aria-labelledby="page-title">
-                <div class="detail-image-wrap">
-                    <a class="back-link" href="?page=<?= escape($rollName) ?>">&larr; <?= escape($rollLabel) ?></a>
-                    <?php $detailPath = $imagePathMap[$detail] ?? $detail; ?>
-                    <img class="detail-image" src="<?= escape($photoUrl($detailPath)) ?>" alt="<?= escape($detailTitle) ?>">
-                </div>
-                <div class="detail-copy">
-                    <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> <?= escape($detailFrameLabel) ?></p>
-                    <h1 id="page-title"><?= escape($detailTitle) ?></h1>
-                    <dl class="detail-meta">
-                        <div><dt>Date</dt><dd><?= escape(displayDate($detailData['date'] ?? null)) ?></dd></div>
-                        <?php if ($detailLines): ?>
-                            <div><dt>Haiku</dt><dd class="haiku"><?php foreach ($detailLines as $line): ?><span class="haiku-line"><?= escape($line) ?></span><?php endforeach; ?></dd></div>
-                        <?php endif; ?>
-                        <div><dt>Notes</dt><dd><?= nl2br(escape(metaValue($detailData, 'notes'))) ?></dd></div>
-                    </dl>
-                    <nav class="frame-nav" aria-label="Browse photographs">
-                        <?php if ($photoIndex > 0): ?>
-                            <a href="<?= $detailPhotoHref($imageNames[$photoIndex - 1]) ?>">&larr; Previous</a>
-                        <?php else: ?>
-                            <span></span>
-                        <?php endif; ?>
-                        <span><?= sprintf('%02d', $photoIndex + 1) ?> / <?= sprintf('%02d', count($imageNames)) ?></span>
-                        <?php if ($photoIndex < count($imageNames) - 1): ?>
-                            <a href="<?= $detailPhotoHref($imageNames[$photoIndex + 1]) ?>">Next &rarr;</a>
-                        <?php else: ?>
-                            <span></span>
-                        <?php endif; ?>
-                    </nav>
+                <a class="detail-back-link back-link" href="?page=<?= escape($rollName) ?>">&larr; <?= escape($rollLabel) ?></a>
+                <div class="photo-detail-layout">
+                    <div class="detail-image-wrap">
+                        <?php $detailPath = $imagePathMap[$detail] ?? $detail; ?>
+                        <img class="detail-image" src="<?= escape($photoUrl($detailPath)) ?>" alt="<?= escape($detailTitle) ?>">
+                    </div>
+                    <div class="detail-copy">
+                        <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> <?= escape($detailFrameLabel) ?></p>
+                        <h1 id="page-title"><?= escape($detailTitle) ?></h1>
+                        <dl class="detail-meta">
+                            <div><dt>Date</dt><dd><?= escape(displayDate($detailData['date'] ?? null)) ?></dd></div>
+                            <?php if ($detailLines): ?>
+                                <div><dt>Haiku</dt><dd class="haiku"><?php foreach ($detailLines as $line): ?><span class="haiku-line"><?= escape($line) ?></span><?php endforeach; ?></dd></div>
+                            <?php endif; ?>
+                            <div><dt>Notes</dt><dd><?= nl2br(escape(metaValue($detailData, 'notes'))) ?></dd></div>
+                        </dl>
+                        <nav class="frame-nav" aria-label="Browse photographs">
+                            <?php if ($photoIndex > 0): ?>
+                                <a href="<?= $detailPhotoHref($imageNames[$photoIndex - 1]) ?>">&larr; Previous</a>
+                            <?php else: ?>
+                                <span></span>
+                            <?php endif; ?>
+                            <span><?= sprintf('%02d', $photoIndex + 1) ?> / <?= sprintf('%02d', count($imageNames)) ?></span>
+                            <?php if ($photoIndex < count($imageNames) - 1): ?>
+                                <a href="<?= $detailPhotoHref($imageNames[$photoIndex + 1]) ?>">Next &rarr;</a>
+                            <?php else: ?>
+                                <span></span>
+                            <?php endif; ?>
+                        </nav>
+                    </div>
                 </div>
             </section>
         <?php elseif ($page === 'digital' && $showDigitalAlbum): ?>
