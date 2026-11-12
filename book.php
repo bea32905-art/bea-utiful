@@ -53,6 +53,44 @@ function loadJsonFile(string $path): array
     return is_array($decoded) ? $decoded : [];
 }
 
+function collectRollImageFiles(string $rollDirectory): array
+{
+    if (!is_dir($rollDirectory)) {
+        return [];
+    }
+
+    $files = glob($rollDirectory . '/**/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+    if ($files === []) {
+        $files = glob($rollDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+    }
+
+    $relativeFiles = [];
+    foreach ($files as $path) {
+        $relativeFiles[] = str_replace('\\', '/', substr((string) $path, strlen($rollDirectory) + 1));
+    }
+
+    usort($relativeFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+
+    $preferred = [];
+    $fallback = [];
+    foreach ($relativeFiles as $relativePath) {
+        $directory = dirname($relativePath);
+        if ($directory === '1 - Web' || $directory === '1 - web') {
+            $preferred[] = $relativePath;
+            continue;
+        }
+        $fallback[] = $relativePath;
+    }
+
+    return $preferred !== [] ? $preferred : $fallback;
+}
+
+function imageUrlForRoll(string $rollName, string $relativePath): string
+{
+    $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $relativePath)), static fn(string $segment): bool => $segment !== ''));
+    return 'photos/photo%20journal/' . rawurlencode($rollName) . '/' . implode('/', array_map('rawurlencode', $segments));
+}
+
 /* ---- Collect every image with metadata across all rolls ---- */
 
 $journalDirectory = __DIR__ . '/photos/photo journal';
@@ -70,8 +108,7 @@ foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDir) {
     $metadata = loadJsonFile($rollDir . '/metadata.json');
     $imageDetails = is_array($metadata['images'] ?? null) ? $metadata['images'] : [];
 
-    $files = glob($rollDir . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
-    usort($files, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+    $files = collectRollImageFiles($rollDir);
 
     foreach ($files as $index => $file) {
         $filename = basename($file);
@@ -96,7 +133,7 @@ foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDir) {
             'roll_number' => $rollNumber,
             'frame' => $index + 1,
             'filename' => $filename,
-            'url' => 'photos/photo%20journal/' . $rollName . '/' . rawurlencode($filename),
+            'url' => imageUrlForRoll($rollName, $file),
             'date' => $isIso ? $date : '',
             'iso_parts' => $isIso ? [$dm[1], $dm[2], $dm[3]] : null,
             'haiku' => haikuLines($details),

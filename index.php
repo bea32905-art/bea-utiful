@@ -28,6 +28,40 @@ function lookupImageDetails(array $imageDetails, string $filename): array
     return [];
 }
 
+function collectRollImageFiles(string $rollDirectory): array
+{
+    $files = glob($rollDirectory . '/**/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+    if ($files === []) {
+        $files = glob($rollDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
+    }
+
+    $relativeFiles = [];
+    foreach ($files as $path) {
+        $relativeFiles[] = str_replace('\\', '/', substr((string) $path, strlen($rollDirectory) + 1));
+    }
+
+    usort($relativeFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+
+    $preferred = [];
+    $fallback = [];
+    foreach ($relativeFiles as $relativePath) {
+        $directory = dirname($relativePath);
+        if ($directory === '1 - Web' || $directory === '1 - web') {
+            $preferred[] = $relativePath;
+            continue;
+        }
+        $fallback[] = $relativePath;
+    }
+
+    return $preferred !== [] ? $preferred : $fallback;
+}
+
+function rollImageUrl(string $rollName, string $relativePath): string
+{
+    $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $relativePath)), static fn(string $segment): bool => $segment !== ''));
+    return 'photos/photo%20journal/' . rawurlencode($rollName) . '/' . implode('/', array_map('rawurlencode', $segments));
+}
+
 /**
  * Stored dates are ISO (YYYY-MM-DD); render as DD/MM/YYYY for readers.
  * Legacy or non-conforming values are displayed as-is rather than guessed at.
@@ -119,9 +153,12 @@ if ($rollDirectory !== '') {
 }
 $imageDetails = is_array($metadata['images'] ?? null) ? $metadata['images'] : [];
 
-$imageFiles = glob($rollDirectory . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: [];
-usort($imageFiles, static fn(string $a, string $b): int => strnatcasecmp(basename($a), basename($b)));
+$imageFiles = collectRollImageFiles($rollDirectory);
 $imageNames = array_map('basename', $imageFiles);
+$imagePathMap = [];
+foreach ($imageFiles as $relativePath) {
+    $imagePathMap[basename($relativePath)] = $relativePath;
+}
 
 /*
  * Permalinks are filename-keyed so they survive re-scans, removals and
@@ -163,7 +200,7 @@ $detailTitle = trim((string) ($detailData['title'] ?? '')) !== ''
     ? (string) $detailData['title']
     : $detailFrameLabel;
 $photoUrl = static fn(string $filename): string =>
-    'photos/photo%20journal/' . $rollName . '/' . rawurlencode($filename);
+    rollImageUrl($rollName, $filename);
 $detailPhotoHref = static fn(string $filename): string =>
     '?page=photo&amp;roll=' . escape($rollName) . '&amp;photo=' . rawurlencode($filename);
 
@@ -282,9 +319,10 @@ if (in_array($page, ['about', 'about-me'], true)) {
                             $tileAlt = $tileLines !== []
                                 ? implode(' ', $tileLines)
                                 : sprintf('Photograph %02d', $index + 1);
+                            $tilePath = $imagePathMap[$filename] ?? $filename;
                             ?>
                             <a class="photo-tile" href="<?= $detailPhotoHref($filename) ?>" aria-label="Open <?= escape(sprintf('frame %02d', $index + 1)) ?>">
-                                <img src="<?= escape($photoUrl($filename)) ?>" alt="<?= escape($tileAlt) ?>" loading="lazy">
+                                <img src="<?= escape($photoUrl($tilePath)) ?>" alt="<?= escape($tileAlt) ?>" loading="lazy">
                                 <span><?= sprintf('%02d', $index + 1) ?></span>
                             </a>
                         <?php endforeach; ?>
@@ -297,7 +335,8 @@ if (in_array($page, ['about', 'about-me'], true)) {
             <section class="photo-detail" aria-labelledby="page-title">
                 <div class="detail-image-wrap">
                     <a class="back-link" href="?page=<?= escape($rollName) ?>">&larr; <?= escape($rollLabel) ?></a>
-                    <img class="detail-image" src="<?= escape($photoUrl($detail)) ?>" alt="<?= escape($detailTitle) ?>">
+                    <?php $detailPath = $imagePathMap[$detail] ?? $detail; ?>
+                    <img class="detail-image" src="<?= escape($photoUrl($detailPath)) ?>" alt="<?= escape($detailTitle) ?>">
                 </div>
                 <div class="detail-copy">
                     <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> <?= escape($detailFrameLabel) ?></p>
