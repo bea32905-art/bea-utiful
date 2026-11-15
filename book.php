@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Photo book generator for bea-utiful.
  *
- * Renders a print-ready, paginated "webpage that's printed" using Paged.js:
+ * Renders a print-ready, paginated webpage using the shared site stylesheet:
  * A4 landscape — photograph on the left, haiku and notes on the right.
  *
  * Usage:
@@ -14,7 +14,7 @@ declare(strict_types=1);
  *   book.php?month=2026-10&draft  -> prints ALL dated photos, ignores featured
  *
  * Output: print from the browser (Ctrl+P -> Save as PDF, A4 landscape,
- * margins: none, background graphics ON). Send that PDF to the printer.
+ * background graphics on). Page size and margins are defined in style.css.
  */
 
 function escape(string $value): string
@@ -194,7 +194,7 @@ function displayDay(array $entry): string
     if ($entry['iso_parts'] === null) {
         return 'Undated';
     }
-    return DateTime::createFromFormat('!Y-m-d', $entry['date'])?->format('j F Y') ?: $entry['date'];
+    return DateTime::createFromFormat('!Y-m-d', $entry['date'])?->format('d/m/Y') ?: $entry['date'];
 }
 ?>
 <!doctype html>
@@ -204,262 +204,23 @@ function displayDay(array $entry): string
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= escape($bookTitle) ?> — Photo Book | bea-utiful</title>
 
-    <style>
-        :root {
-            --paper: #ffffff;
-            --ink: #20211f;
-            --ink-soft: #6a6f63;
-            --line: #d8dfd6;
-            --accent: #ffc922;
-            --eyebrow: #0b6b0b;
-            --tile: #d3dbd6;
-            --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-            --sans: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
-        }
-
-        /*
-         * Page geometry. A4 landscape: 297mm wide, 210mm tall.
-         * With 16mm side / 14+16mm top-bottom margins the content box
-         * is 265mm x 180mm — .cover and .colophon must not exceed 180mm.
-         */
-        @page {
-            size: A4 landscape;
-            margin: 14mm 16mm 16mm;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            background: #808080; /* desk behind the pages; not printed */
-        }
-
-        body {
-            font-family: var(--serif);
-            color: var(--ink);
-        }
-
-        .pagedjs_page {
-            background: var(--paper);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-            margin: 12px auto;
-        }
-
-        @media print {
-            html,
-            body {
-                background: var(--paper);
-            }
-            .pagedjs_page {
-                box-shadow: none;
-                margin: 0;
-            }
-            * {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-        }
-
-        /* ---------- Cover ---------- */
-        .cover {
-            height: 180mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            page-break-after: always;
-            break-after: page;
-        }
-
-        .cover .eyebrow {
-            font-family: var(--sans);
-            font-size: 10pt;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--eyebrow);
-            margin: 0 0 14mm;
-        }
-
-        .cover h1 {
-            font-size: 40pt;
-            font-weight: 400;
-            line-height: 1.05;
-            margin: 0 0 8mm;
-        }
-
-        .cover .subtitle {
-            font-size: 13pt;
-            color: var(--ink-soft);
-            margin: 0;
-        }
-
-        .cover .rule {
-            width: 26mm;
-            height: 2mm;
-            background: var(--accent);
-            margin-top: 10mm;
-        }
-
-        /* ---------- Day pages: image left, text right ---------- */
-        .day {
-            page-break-after: always;
-            break-after: page;
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-            grid-template-rows: auto 1fr auto;
-            grid-template-areas:
-                "date    date"
-                "frame   haiku"
-                "frame   footnote";
-            column-gap: 10mm;
-            row-gap: 5mm;
-            height: 100%;
-        }
-
-        .day:last-of-type {
-            page-break-after: auto;
-            break-after: auto;
-        }
-
-        .day .date-line {
-            grid-area: date;
-            font-family: var(--sans);
-            font-size: 8.5pt;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--eyebrow);
-            border-bottom: 0.4mm solid var(--line);
-            padding-bottom: 2.5mm;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .day .date-line .frame-ref {
-            color: var(--ink-soft);
-        }
-
-        .day .frame {
-            grid-area: frame;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-        }
-
-        .day .frame img {
-            max-width: 100%;
-            max-height: 150mm;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-        }
-
-        .day .haiku {
-            grid-area: haiku;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: flex-end;
-            text-align: right;
-            font-size: 15pt;
-            line-height: 1.9;
-            margin: 0;
-        }
-
-        .day .haiku .line {
-            display: block;
-        }
-
-        .day .footnote {
-            grid-area: footnote;
-            font-family: var(--sans);
-            font-size: 8pt;
-            color: var(--ink-soft);
-            border-top: 1mm solid var(--accent);
-            padding-top: 2.5mm;
-            margin: 0;
-            align-self: end;
-        }
-
-        /* Days with no poem keep the grid intact; the haiku cell stays empty. */
-
-        /* ---------- Back page ---------- */
-        .colophon {
-            height: 180mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            color: var(--ink-soft);
-            font-size: 10pt;
-            line-height: 1.8;
-        }
-
-        /* ---------- Screen-only print bar ---------- */
-        .no-print-ui {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 99;
-            background: var(--ink);
-            color: #fff;
-            font-family: var(--sans);
-            font-size: 13px;
-            padding: 10px 16px;
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .no-print-ui button {
-            font: inherit;
-            padding: 6px 14px;
-            border: none;
-            background: var(--accent);
-            color: var(--ink);
-            cursor: pointer;
-        }
-
-        @media print {
-            .no-print-ui {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 
     <script>
-        window.PagedConfig = { auto: true };
-
         window.addEventListener('load', () => {
-            const bar = document.getElementById('print-bar');
-            const btn = document.getElementById('print-btn');
+            const printBar = document.getElementById('print-bar');
+            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            printBar.hidden = false;
 
-            const enableBar = () => {
-                bar.style.visibility = 'visible';
-                btn.addEventListener('click', () => window.print());
-                const params = new URLSearchParams(location.search);
-                if (params.has('autoprint')) {
-                    setTimeout(() => window.print(), 500);
-                }
-            };
-
-            if (window.PagedPolyfill) {
-                window.PagedPolyfill.preview().then(enableBar).catch(() => enableBar());
-            } else {
-                // Paged.js failed to load (offline?): the plain-CSS page
-                // breaks still paginate via the browser's native engine.
-                enableBar();
+            if (new URLSearchParams(location.search).has('autoprint')) {
+                window.print();
             }
         });
     </script>
 </head>
-<body>
-    <div class="no-print-ui" id="print-bar" style="visibility: hidden;">
-        <span>Photo book ready — print to PDF (A4 landscape, margins: none, background graphics: on)</span>
+<body class="page-book">
+    <div class="no-print-ui" id="print-bar" hidden>
+        <span>Photo book ready — print to PDF (A4 landscape, background graphics: on)</span>
         <button id="print-btn">Print</button>
     </div>
 
@@ -504,6 +265,5 @@ function displayDay(array $entry): string
         </section>
     <?php endif; ?>
 
-    <script src="https://unpkg.com/pagedjs@0.4.3/dist/paged.polyfill.js"></script>
 </body>
 </html>

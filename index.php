@@ -332,20 +332,21 @@ if (in_array($page, ['about', 'about-me'], true)) {
                 <?php endif; ?>
             </section>
         <?php elseif ($page === 'photo' && $detail !== ''): ?>
-            <section class="photo-detail" aria-labelledby="page-title">
+            <section class="photo-detail" aria-label="<?= escape($rollLabel . ', ' . $detailFrameLabel) ?>">
                 <a class="detail-back-link back-link" href="?page=<?= escape($rollName) ?>">&larr; <?= escape($rollLabel) ?></a>
                 <div class="photo-detail-layout">
                     <div class="detail-image-wrap">
                         <?php $detailPath = $imagePathMap[$detail] ?? $detail; ?>
-                        <img class="detail-image" src="<?= escape($photoUrl($detailPath)) ?>" alt="<?= escape($detailTitle) ?>">
+                        <button class="detail-image-trigger" type="button" aria-label="View photograph fullscreen">
+                            <img class="detail-image" src="<?= escape($photoUrl($detailPath)) ?>" alt="<?= escape($detailTitle) ?>">
+                        </button>
                     </div>
                     <div class="detail-copy">
                         <p class="eyebrow"><?= escape($rollLabel) ?> <span>/</span> <?= escape($detailFrameLabel) ?></p>
-                        <h1 id="page-title"><?= escape($detailTitle) ?></h1>
                         <dl class="detail-meta">
-                            <div><dt>Date</dt><dd><?= escape(displayDate($detailData['date'] ?? null)) ?></dd></div>
+                            <div class="detail-date"><dd><?= escape(displayDate($detailData['date'] ?? null)) ?></dd></div>
                             <?php if ($detailLines): ?>
-                                <div><dt>Haiku</dt><dd class="haiku"><?php foreach ($detailLines as $line): ?><span class="haiku-line"><?= escape($line) ?></span><?php endforeach; ?></dd></div>
+                                <div><dd class="haiku"><?php foreach ($detailLines as $line): ?><span class="haiku-line"><?= escape($line) ?></span><?php endforeach; ?></dd></div>
                             <?php endif; ?>
                             <div><dt>Notes</dt><dd><?= nl2br(escape(metaValue($detailData, 'notes'))) ?></dd></div>
                         </dl>
@@ -364,7 +365,25 @@ if (in_array($page, ['about', 'about-me'], true)) {
                         </nav>
                     </div>
                 </div>
+                <dialog class="photo-lightbox" aria-label="Fullscreen photograph">
+                    <button class="photo-lightbox-close" type="button" aria-label="Close fullscreen photograph">&times;</button>
+                    <img class="photo-lightbox-image" src="<?= escape($photoUrl($detailPath)) ?>" alt="<?= escape($detailTitle) ?>">
+                </dialog>
             </section>
+            <script>
+                const lightbox = document.querySelector('.photo-lightbox');
+                const lightboxTrigger = document.querySelector('.detail-image-trigger');
+                const lightboxClose = document.querySelector('.photo-lightbox-close');
+
+                lightboxTrigger.addEventListener('click', () => lightbox.showModal());
+                lightboxClose.addEventListener('click', () => lightbox.close());
+                document.addEventListener('keydown', event => {
+                    if (event.key === 'Escape' && lightbox.open) {
+                        event.preventDefault();
+                        lightbox.close();
+                    }
+                });
+            </script>
         <?php elseif ($page === 'digital' && $showDigitalAlbum): ?>
             <section class="roll-page" aria-labelledby="page-title">
                 <div class="page-heading">

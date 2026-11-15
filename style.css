@@ -337,22 +337,74 @@ h1 {
 
 .photo-detail-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.72fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: clamp(18px, 2.5vw, 52px);
     align-items: center;
 }
 
+.detail-image-trigger {
+    width: min(100%, 64vh, 560px);
+    aspect-ratio: 1;
+    margin-inline: auto;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: var(--paper);
+    cursor: zoom-in;
+}
+
 .detail-image {
-    width: min(100%, 760px);
-    height: min(64vh, 560px);
-    max-height: 64vh;
+    width: 100%;
+    height: 100%;
     display: block;
     object-fit: contain;
-    background: var(--paper);
+}
+
+.photo-lightbox {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 56px 24px 24px;
+    border: 0;
+    background: transparent;
+}
+
+.photo-lightbox::backdrop {
+    background: rgba(0, 0, 0, 0.88);
+}
+
+.photo-lightbox-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.photo-lightbox-close {
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: white;
+    font: inherit;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.photo-lightbox-close:focus-visible {
+    outline-color: white;
 }
 
 .detail-copy {
-    max-width: 360px;
+    width: 100%;
 }
 
 .detail-copy h1 {
@@ -373,6 +425,11 @@ h1 {
 .detail-meta dd {
     font-size: 1.1rem;
     line-height: 1.45;
+}
+
+.detail-date dd {
+    color: var(--eyebrow);
+    font-size: 1.3rem;
 }
 
 .frame-nav {
@@ -534,9 +591,8 @@ h1 {
         gap: 32px;
     }
 
-    .detail-image {
-        width: 100%;
-        height: min(62vh, 560px);
+    .detail-image-trigger {
+        width: min(100%, 62vh, 560px);
         margin-inline: auto;
     }
 
@@ -560,10 +616,6 @@ h1 {
 
     .about-me-text {
         margin-top: 24px;
-    }
-
-    .detail-image {
-        max-height: 62vh;
     }
 
     .detail-copy h1 {
@@ -626,5 +678,221 @@ h1 {
     * {
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+    }
+}
+
+/* ---- Photo book ---- */
+
+@page {
+    size: A4 landscape;
+    margin: 14mm 16mm 16mm;
+}
+
+.page-book {
+    min-height: 0;
+    display: block;
+    padding: 48px 0;
+    background-image: none;
+}
+
+.page-book .cover,
+.page-book .day,
+.page-book .colophon {
+    width: min(100% - 64px, 1440px);
+    min-height: min(75vh, 180mm);
+    margin: 0 auto 24px;
+    padding: 32px;
+    background: var(--paper);
+}
+
+.page-book .cover,
+.page-book .colophon {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    break-after: page;
+    page-break-after: always;
+}
+
+.page-book .cover .eyebrow {
+    margin: 0 0 14mm;
+}
+
+.page-book .cover h1 {
+    margin: 0 0 8mm;
+    font-size: 40pt;
+}
+
+.page-book .cover .subtitle {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 17px;
+}
+
+.page-book .cover .rule {
+    width: 26mm;
+    height: 2mm;
+    margin-top: 10mm;
+    background: var(--accent);
+}
+
+.page-book .day {
+    min-height: min(75vh, 180mm);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+        "date date"
+        "frame haiku"
+        "frame footnote";
+    column-gap: 10mm;
+    row-gap: 5mm;
+    break-after: page;
+    page-break-after: always;
+}
+
+.page-book .day:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+}
+
+.page-book .date-line {
+    grid-area: date;
+    padding-bottom: 2.5mm;
+    border-bottom: 0.4mm solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    color: var(--eyebrow);
+    font-family: var(--sans);
+    font-size: 18pt;
+    letter-spacing: 0.08em;
+}
+
+.page-book .frame-ref {
+    color: var(--ink-soft);
+    font-size: 18pt;
+}
+
+.page-book .frame {
+    width: min(100%, 125mm);
+    aspect-ratio: 1;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    align-self: center;
+    grid-area: frame;
+}
+
+.page-book .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.page-book .haiku {
+    grid-area: haiku;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+    font-family: var(--serif);
+    font-size: 20pt;
+    line-height: 1.5;
+}
+
+.page-book .haiku .line {
+    display: block;
+}
+
+.page-book .footnote {
+    grid-area: footnote;
+    align-self: end;
+    margin: 0;
+    padding-top: 2.5mm;
+    border-top: 1mm solid var(--accent);
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 11pt;
+    line-height: 1.5;
+}
+
+.page-book .colophon {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.page-book .no-print-ui {
+    position: fixed;
+    z-index: 99;
+    inset: 0 0 auto;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: var(--ink);
+    color: var(--white);
+    font-family: var(--sans);
+    font-size: 15px;
+}
+
+.page-book .no-print-ui[hidden] {
+    display: none;
+}
+
+.page-book .no-print-ui button {
+    padding: 8px 18px;
+    border: 1px solid var(--ink);
+    background: var(--accent);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+}
+
+.page-book .no-print-ui button:hover,
+.page-book .no-print-ui button:focus-visible {
+    background: var(--white);
+}
+
+@media print {
+    .page-book {
+        padding: 0;
+        background: white;
+    }
+
+    .page-book .cover,
+    .page-book .day,
+    .page-book .colophon {
+        width: auto;
+        height: 180mm;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+
+    .page-book .no-print-ui {
+        display: none;
+    }
+
+    .page-book .cover,
+    .page-book .day,
+    .page-book .colophon {
+        break-after: page;
+        page-break-after: always;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .page-book .colophon:last-child {
+        break-after: auto;
+        page-break-after: auto;
     }
 }
