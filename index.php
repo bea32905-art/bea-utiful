@@ -153,7 +153,16 @@ if ($rollDirectory !== '') {
 }
 $imageDetails = is_array($metadata['images'] ?? null) ? $metadata['images'] : [];
 
-$imageFiles = collectRollImageFiles($rollDirectory);
+$allImageFiles = collectRollImageFiles($rollDirectory);
+$frameIndexMap = array_flip(array_map('basename', $allImageFiles));
+$imageFiles = $allImageFiles;
+$imageFiles = array_values(array_filter(
+    $imageFiles,
+    static function (string $relativePath) use ($imageDetails): bool {
+        $details = lookupImageDetails($imageDetails, basename($relativePath));
+        return ($details['featured'] ?? true) !== false;
+    }
+));
 $imageNames = array_map('basename', $imageFiles);
 $imagePathMap = [];
 foreach ($imageFiles as $relativePath) {
@@ -195,7 +204,8 @@ if ($photoKey === '' && $legacyIndex !== false && $imageNames !== []) {
 $detail = $photoKey;
 $detailData = $detail !== '' ? lookupImageDetails($imageDetails, $detail) : [];
 $detailLines = haikuLines($detailData);
-$detailFrameLabel = sprintf('Frame %02d', $photoIndex + 1);
+$detailFrameNumber = ($frameIndexMap[$detail] ?? $photoIndex) + 1;
+$detailFrameLabel = sprintf('Frame %02d', $detailFrameNumber);
 $detailTitle = trim((string) ($detailData['title'] ?? '')) !== ''
     ? (string) $detailData['title']
     : $detailFrameLabel;
@@ -316,14 +326,15 @@ if (in_array($page, ['about', 'about-me'], true)) {
                             <?php
                             $tileData = lookupImageDetails($imageDetails, $filename);
                             $tileLines = haikuLines($tileData);
+                            $frameNumber = ($frameIndexMap[$filename] ?? $index) + 1;
                             $tileAlt = $tileLines !== []
                                 ? implode(' ', $tileLines)
-                                : sprintf('Photograph %02d', $index + 1);
+                                : sprintf('Photograph %02d', $frameNumber);
                             $tilePath = $imagePathMap[$filename] ?? $filename;
                             ?>
-                            <a class="photo-tile" href="<?= $detailPhotoHref($filename) ?>" aria-label="Open <?= escape(sprintf('frame %02d', $index + 1)) ?>">
+                            <a class="photo-tile" href="<?= $detailPhotoHref($filename) ?>" aria-label="Open <?= escape(sprintf('frame %02d', $frameNumber)) ?>">
                                 <img src="<?= escape($photoUrl($tilePath)) ?>" alt="<?= escape($tileAlt) ?>" loading="lazy">
-                                <span><?= sprintf('%02d', $index + 1) ?></span>
+                                <span><?= sprintf('%02d', $frameNumber) ?></span>
                             </a>
                         <?php endforeach; ?>
                     </div>
