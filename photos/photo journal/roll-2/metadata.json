@@ -1,9 +1,33 @@
 {
   "film_type": "Kodak Ektar 100",
   "start_date": "2026-09-16",
-  "end_date": "2026-10-23",
-  "notes": "This roll was started when I was using Instax Mini for the photo journal, so these images aren't following the one to two frames per day.",
+  "end_date": "2026-10-14",
+  "notes": "",
   "images": {
+    "Roll 2 - Kodak Ektar 100 - 01 - Web.jpg": {
+      "date": "",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 02 - Web.jpg": {
+      "date": "",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 03 - Web.jpg": {
+      "date": "",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 04 - Web.jpg": {
+      "date": "",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
     "Roll 2 - Kodak Ektar 100 - 05 - Web.jpg": {
       "date": "2026-09-16",
       "haiku": [
@@ -92,6 +116,145 @@
         "Hide, curl up, warm, safe."
       ],
       "notes": "Sun again, I quite like the poem.",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 15 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 16 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 17 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 18 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 19 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 20 - Web.jpg": {
+      "date": "2",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 21 - Web.jpg": {
+      "date": "",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 22 - Web.jpg": {
+      "date": "",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 23 - Web.jpg": {
+      "date": "2026/10/01",
+      "haiku": ["A prism to the past",
+                "A threat to take you back - ",
+                "The fear of that."],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 24 - Web.jpg": {
+      "date": "2026/10/02",
+      "haiku": ["We print our vision on the grey/white sky.",
+                "But what is mine to see?"],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 25 - Web.jpg": {
+      "date": "2026/10/03",
+      "haiku": ["The wind sighs with the winding down of autumn. -",
+                "The potato blooms with the life of summer."],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 26 - Web.jpg": {
+      "date": "2026/10/04",
+      "haiku": ["The old bell tower,",
+                "summer holds on while the bells ring."],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 27 - Web.jpg": {
+      "date": "2026/10/05",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 28 - Web.jpg": {
+      "date": "2026/10/06",
+      "haiku": ["200 years ago.",
+                "Industrial centre of the world.",
+                "Warehouse space for rent... anyone?"],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 29 - Web.jpg": {
+      "date": "2026/10/07",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 30 - Web.jpg": {
+      "date": "2026/10/08",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 31 - Web.jpg": {
+      "date": "2026/10/09",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 32 - Web.jpg": {
+      "date": "2026/10/10",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 33 - Web.jpg": {
+      "date": "2026/10/11",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 34 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 35 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
+      "featured": true
+    },
+    "Roll 2 - Kodak Ektar 100 - 36 - Web.jpg": {
+      "date": "2026/10/14",
+      "haiku": [],
+      "notes": "",
       "featured": true
     }
   }

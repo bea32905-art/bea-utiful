@@ -1,0 +1,160 @@
+/* bea-utiful photo book — WeasyPrint stylesheet.
+   One A4 landscape sheet = one spread: black contact-sheet panel (left),
+   site-palette paper page (right). */
+
+:root {
+    --paper: #d9dedb;
+    --ink: #20211f;
+    --ink-soft: #6a6f63;
+    --accent-dark: #d98f00;
+    --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --sans: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
+}
+
+@page {
+    size: A4 landscape;
+    margin: 0;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--sans);
+    color: var(--ink);
+}
+
+.sheet {
+    width: 297mm;
+    height: 210mm;
+    display: flex;
+    flex-direction: row;
+    break-after: page;
+    page-break-after: always;
+    overflow: hidden;
+}
+
+.sheet:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+}
+
+/* ---- Left panel: contact sheet ---- */
+
+.panel {
+    width: 50%;
+    height: 210mm;
+    background: #000;
+    color: #f5a623;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.corner-label {
+    margin: 0;
+    position: absolute;
+    font-family: var(--sans);
+    font-size: 14pt;
+    color: #f5a623;
+}
+
+.corner-label.top-left { top: 10mm; left: 10mm; }
+.corner-label.top-right { top: 10mm; right: 10mm; }
+.corner-label.bottom-left { bottom: 10mm; left: 10mm; }
+
+.contact-frame {
+    margin: 0;
+    width: 85%;
+    max-width: 110mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contact-frame img {
+    max-width: 100%;
+    max-height: 150mm;
+    object-fit: contain;
+}
+
+/* ---- Cover / colophon variants ---- */
+
+.panel-cover .corner-label.top-left { top: 10mm; left: 10mm; }
+.panel-cover .corner-label.bottom-left { bottom: 10mm; left: 10mm; }
+
+.panel-cover .corner-label {
+    font-size: 16pt;
+}
+
+/* ---- Right page: site palette ---- */
+
+.page {
+    width: 50%;
+    height: 210mm;
+    background: var(--paper);
+    position: relative;
+    padding: 10mm 12mm;
+}
+
+.date-line {
+    position: absolute;
+    top: 10mm;
+    right: 12mm;
+    margin: 0;
+    font-size: 18pt;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+}
+
+.writing {
+    margin: 55mm 0 0;
+    font-family: var(--serif);
+    font-size: 22pt;
+    line-height: 1.45;
+    text-align: justify;
+}
+
+.writing span {
+    display: block;
+}
+
+.footnote {
+    position: absolute;
+    bottom: 14mm;
+    left: 12mm;
+    right: 12mm;
+    margin: 0;
+    padding-top: 3mm;
+    border-top: 1mm solid var(--accent-dark);
+    font-size: 11pt;
+    line-height: 1.5;
+    color: var(--ink-soft);
+}
+
+.page h1 {
+    margin: 80mm 0 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 44pt;
+    line-height: 1.02;
+    text-align: center;
+}
+
+.page .subtitle {
+    margin: 6mm 0 0;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 15pt;
+}
+
+.page .colophon-copy {
+    margin: 90mm 0 0;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13pt;
+}
