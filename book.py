@@ -190,6 +190,7 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
 
     for entry in entries:
         lines = "".join(f"<span>{escape(line)}</span>" for line in entry["haiku"])
+        placeholder = "" if lines else " unwritten"
         writing = lines or "<span>(no writing yet)</span>"
         parts.append(f"""
 <section class="sheet">
@@ -201,7 +202,7 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
   </div>
   <div class="page">
     <p class="date-line">{escape(display_day(entry))}</p>
-    <p class="writing">{writing}</p>
+    <p class="writing{placeholder}">{writing}</p>
     {f'<p class="footnote">{escape(entry["notes"])}</p>' if entry['notes'] else ''}
   </div>
 </section>""")
