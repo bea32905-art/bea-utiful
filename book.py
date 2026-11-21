@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """WeasyPrint photo book generator for bea-utiful.
 
-Replaces book.php + browser printing. One A4 landscape sheet per day:
-left half is a contact-sheet style black panel, right half follows the
-site palette from style.css.
+Replaces book.php + browser printing. One 25 x 20 cm page per
+photograph, full-bleed on black. Captions sit in the four corners:
+film type (top-left), date (top-right), image title (bottom-left),
+bea-utiful.me (bottom-right).
 
 Usage:
   python3 book.py                          # latest month that has dated photos
   python3 book.py --month 2026-10          # specific month
   python3 book.py --roll roll-2            # whole roll in frame order
-  python3 book.py --draft                  # ignore "featured", include all dated
+  python3 book.py --draft                   # ignore "featured", include all dated
   python3 book.py --open                   # open the PDF when done
 """
 
@@ -29,7 +30,8 @@ PROJECT_DIR = Path(__file__).resolve().parent
 JOURNAL_DIR = PROJECT_DIR / "photos" / "photo journal"
 CSS_FILE = PROJECT_DIR / "book-print.css"
 BUILD_DIR = PROJECT_DIR / "book-build"
-DEFAULT_CAMERA = "Minolta X-300"
+SITE_URL = "bea-utiful.me"
+NO_DATE_TEXT = "Undated"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 WEB_SUBDIRS = {"1 - web"}
@@ -57,13 +59,17 @@ def collect_roll_images(roll_dir: Path) -> list[Path]:
     return sorted(chosen, key=lambda p: p.name.lower())
 
 
-def haiku_lines(details: dict) -> list[str]:
-    haiku = details.get("haiku")
-    if isinstance(haiku, list):
-        lines = [str(line).strip() for line in haiku]
-        return [line for line in lines if line]
-    legacy = str(details.get("description", "")).strip()
-    return [legacy] if legacy else []
+def parse_date(raw: str) -> tuple[str, list[str] | None]:
+    """Accept YYYY-MM-DD or YYYY/MM/DD; return ('', None) if not a full date."""
+    value = str(raw).strip()
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            parsed = datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+        iso = parsed.strftime("%Y-%m-%d")
+        return iso, iso.split("-")
+    return "", None
 
 
 def collect_entries() -> list[dict]:
@@ -78,7 +84,6 @@ def collect_entries() -> list[dict]:
         metadata = load_json(roll_dir / "metadata.json")
         image_details = metadata.get("images") if isinstance(metadata.get("images"), dict) else {}
         film_type = str(metadata.get("film_type", "")).strip()
-        camera = str(metadata.get("camera", "")).strip() or DEFAULT_CAMERA
 
         for index, image_path in enumerate(collect_roll_images(roll_dir)):
             filename = image_path.name
@@ -92,27 +97,19 @@ def collect_entries() -> list[dict]:
             if not isinstance(details, dict):
                 continue
 
-            date = str(details.get("date", "")).strip()
-            iso_parts = None
-            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
-                iso_parts = date.split("-")
-            else:
-                date = ""
+            date, iso_parts = parse_date(details.get("date"))
 
             relative = image_path.relative_to(PROJECT_DIR)
             entries.append({
                 "roll": roll_dir.name,
                 "roll_number": roll_number,
                 "frame": index + 1,
-                "title": str(details.get("title", "")).strip() or f"{index + 1:02d}",
+                "title": str(details.get("title", "")).strip(),
                 "src": str(relative),
                 "date": date,
                 "iso_parts": iso_parts,
-                "haiku": haiku_lines(details),
-                "notes": str(details.get("notes", "")).strip(),
                 "featured": details.get("featured") is True,
                 "film_type": film_type,
-                "camera": camera,
             })
     return entries
 
@@ -143,15 +140,15 @@ def select_book(entries: list[dict], month: str | None, roll: str | None, draft:
         title = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
     except ValueError:
         title = month
-    subtitle = f"{len(chosen)} {'day' if len(chosen) == 1 else 'days'}"
+    subtitle = f"{len(chosen)} {'photo' if len(chosen) == 1 else 'photos'}"
     return chosen, title, subtitle
 
 
 def display_day(entry: dict) -> str:
     if not entry["iso_parts"]:
-        return "Undated"
+        return NO_DATE_TEXT
     try:
-        return datetime.strptime(entry["date"], "%Y-%m-%d").strftime("%d/%m/%Y")
+        return datetime.strptime(entry["date"], "%Y-%m-%d").strftime("%d.%m.%Y")
     except ValueError:
         return entry["date"]
 
@@ -166,12 +163,8 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
 <link rel="stylesheet" href="{CSS_FILE.name}">
 </head>
 <body>
-<section class="sheet cover-sheet">
-  <div class="panel panel-cover">
-    <p class="corner-label top-left">bea-utiful</p>
-    <p class="corner-label bottom-left">Photo Journal / 35mm</p>
-  </div>
-  <div class="page">
+<section class="sheet">
+  <div class="cover-title">
     <h1>{escape(title)}</h1>
     {f'<p class="subtitle">{escape(subtitle)}</p>' if subtitle else ''}
   </div>
@@ -180,43 +173,22 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
     if not entries:
         parts.append("""
 <section class="sheet">
-  <div class="panel"></div>
-  <div class="page">
-    <p class="writing">No dated, featured photographs were found for this book.
-    Add dates in YYYY-MM-DD format and "featured": true to your metadata.json
-    files, then rebuild.</p>
-  </div>
+  <p class="notice">No dated, featured photographs were found for this book.
+  Add dates in YYYY-MM-DD format and "featured": true to your metadata.json
+  files, then rebuild.</p>
 </section>""")
 
     for entry in entries:
-        lines = "".join(f"<span>{escape(line)}</span>" for line in entry["haiku"])
-        placeholder = "" if lines else " unwritten"
-        writing = lines or "<span>(no writing yet)</span>"
         parts.append(f"""
 <section class="sheet">
-  <div class="panel">
-    <p class="corner-label top-left">{escape(entry['film_type'])}</p>
-    <p class="corner-label top-right">{escape(entry['title'])}</p>
-    <figure class="contact-frame"><img src="{quote(entry['src'])}" alt=""></figure>
-    <p class="corner-label bottom-left">{escape(entry['camera'])}</p>
-  </div>
-  <div class="page">
-    <p class="date-line">{escape(display_day(entry))}</p>
-    <p class="writing{placeholder}">{writing}</p>
-    {f'<p class="footnote">{escape(entry["notes"])}</p>' if entry['notes'] else ''}
-  </div>
+  <p class="corner-label top-left">{escape(entry['film_type'])}</p>
+  <p class="corner-label top-right">{escape(display_day(entry))}</p>
+  <figure class="photo-frame"><img src="{quote(entry['src'])}" alt=""></figure>
+  <p class="corner-label bottom-left">{escape(entry['title'])}</p>
+  <p class="corner-label bottom-right">{escape(SITE_URL)}</p>
 </section>""")
 
     parts.append("""
-<section class="sheet colophon-sheet">
-  <div class="panel panel-cover">
-    <p class="corner-label top-left">bea-utiful</p>
-    <p class="corner-label bottom-left">Shot on 35mm film. Handmade book.</p>
-  </div>
-  <div class="page">
-    <p class="colophon-copy">bea-utiful photo journal</p>
-  </div>
-</section>
 </body>
 </html>""")
     return "".join(parts)
@@ -245,7 +217,7 @@ def main() -> int:
     HTML(string=html_for(selected, title, subtitle), base_url=str(PROJECT_DIR)).write_pdf(
         str(pdf_path), stylesheets=[CSS_FILE]
     )
-    print(f"Wrote {pdf_path} ({len(selected)} spreads)")
+    print(f"Wrote {pdf_path} ({len(selected)} photos)")
 
     if args.open:
         subprocess.run(["open", str(pdf_path)], check=False)
