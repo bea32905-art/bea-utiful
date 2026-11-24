@@ -4,7 +4,7 @@ PHP photo journal for bea-utiful.co.uk. Upload the project files to your Hosting
 
 ## Photo Journal
 
-Upload up to 36 `.jpg`, `.jpeg`, `.png`, `.webp`, or `.gif` files into a roll folder under `photos/photo journal/`, such as `photos/photo journal/roll-1/`. Files are shown in natural filename order, so names such as `01.jpg`, `02.jpg`, and `03.jpg` keep the gallery ordered. The responsive masonry layout preserves each photograph's original proportions.
+Upload up to 36 `.jpg`, `.jpeg`, `.png`, `.webp`, or `.gif` files into a roll folder under `photos/film/`, such as `photos/film/roll-1/`. Files are shown in natural filename order, so names such as `01.jpg`, `02.jpg`, and `03.jpg` keep the gallery ordered. The responsive masonry layout preserves each photograph's original proportions.
 
 Edit each roll's `metadata.json` to add film type, start and end dates, roll notes, and optional per-image date, description, and notes. Per-image entries are keyed by the exact image filename.
 

@@ -27,7 +27,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 PROJECT_DIR = Path(__file__).resolve().parent
-JOURNAL_DIR = PROJECT_DIR / "photos" / "photo journal"
+JOURNAL_DIR = PROJECT_DIR / "photos" / "film"
 CSS_FILE = PROJECT_DIR / "book-print.css"
 BUILD_DIR = PROJECT_DIR / "book-build"
 SITE_URL = "bea-utiful.me"
@@ -57,6 +57,19 @@ def collect_roll_images(roll_dir: Path) -> list[Path]:
     preferred = [p for p in files if p.parent.name.lower() in WEB_SUBDIRS]
     chosen = preferred if preferred else files
     return sorted(chosen, key=lambda p: p.name.lower())
+
+
+def is_portrait(image_path: Path) -> bool:
+    """True if the image is taller than it is wide (after EXIF rotation)."""
+    try:
+        from PIL import Image, ImageOps
+
+        with Image.open(image_path) as im:
+            transposed = ImageOps.exif_transpose(im)
+            width, height = (transposed or im).size
+    except Exception:
+        return False
+    return height > width
 
 
 def parse_date(raw: str) -> tuple[str, list[str] | None]:
@@ -101,6 +114,7 @@ def collect_entries() -> list[dict]:
 
             relative = image_path.relative_to(PROJECT_DIR)
             entries.append({
+                "portrait": is_portrait(image_path),
                 "roll": roll_dir.name,
                 "roll_number": roll_number,
                 "frame": index + 1,
@@ -148,7 +162,7 @@ def display_day(entry: dict) -> str:
     if not entry["iso_parts"]:
         return NO_DATE_TEXT
     try:
-        return datetime.strptime(entry["date"], "%Y-%m-%d").strftime("%d.%m.%Y")
+        return datetime.strptime(entry["date"], "%Y-%m-%d").strftime("%d/%m/%Y")
     except ValueError:
         return entry["date"]
 
@@ -183,7 +197,7 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
 <section class="sheet">
   <p class="corner-label top-left">{escape(entry['film_type'])}</p>
   <p class="corner-label top-right">{escape(display_day(entry))}</p>
-  <figure class="photo-frame"><img src="{quote(entry['src'])}" alt=""></figure>
+  <figure class="photo-frame"><img class="{'rotated' if entry['portrait'] else 'normal'}" src="{quote(entry['src'])}" alt=""></figure>
   <p class="corner-label bottom-left">{escape(entry['title'])}</p>
   <p class="corner-label bottom-right">{escape(SITE_URL)}</p>
 </section>""")
@@ -192,6 +206,20 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
 </body>
 </html>""")
     return "".join(parts)
+
+
+def export_pages_as_pngs(pdf_path: Path, out_dir: Path, dpi: int = 300) -> int:
+    """Render every page of the PDF to a PNG in out_dir; return page count."""
+    import pymupdf  # noqa: PLC0415 — imported after arg parsing on purpose
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    count = 0
+    with pymupdf.open(pdf_path) as doc:
+        for page in doc:
+            count += 1
+            pix = page.get_pixmap(dpi=dpi)
+            pix.save(out_dir / f"page-{count:03d}.png")
+    return count
 
 
 def main() -> int:
@@ -218,6 +246,10 @@ def main() -> int:
         str(pdf_path), stylesheets=[CSS_FILE]
     )
     print(f"Wrote {pdf_path} ({len(selected)} photos)")
+
+    png_dir = BUILD_DIR / "pngs"
+    pages = export_pages_as_pngs(pdf_path, png_dir)
+    print(f"Wrote {pages} PNGs to {png_dir}")
 
     if args.open:
         subprocess.run(["open", str(pdf_path)], check=False)

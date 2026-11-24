@@ -42,7 +42,7 @@ const STAGES = [
 const ROLLS_ROOT = __DIR__ . '/rolls';
 
 // Where index.php expects the web-sized images.
-const WEBSITE_PHOTOS_ROOT = __DIR__ . '/photos/photo journal';
+const WEBSITE_PHOTOS_ROOT = __DIR__ . '/photos/film';
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tif', 'tiff'];
 
@@ -256,7 +256,7 @@ function cmdPublish(array $args, bool $apply): int
     foreach ($images as $file) {
         $name = basename($file);
         $dest = $targetDir . '/' . $name;
-        fwrite(STDOUT, '  ' . $name . "  ->  photos/photo journal/roll-{$rollNo}/" . ($apply ? '' : '   (dry run)') . "\n");
+        fwrite(STDOUT, '  ' . $name . "  ->  photos/film/roll-{$rollNo}/" . ($apply ? '' : '   (dry run)') . "\n");
         if ($apply) {
             if (!copy($file, $dest)) {
                 fwrite(STDERR, "  FAILED to copy {$name}\n");

@@ -88,12 +88,12 @@ function collectRollImageFiles(string $rollDirectory): array
 function imageUrlForRoll(string $rollName, string $relativePath): string
 {
     $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $relativePath)), static fn(string $segment): bool => $segment !== ''));
-    return 'photos/photo%20journal/' . rawurlencode($rollName) . '/' . implode('/', array_map('rawurlencode', $segments));
+    return 'photos/film/' . rawurlencode($rollName) . '/' . implode('/', array_map('rawurlencode', $segments));
 }
 
 /* ---- Collect every image with metadata across all rolls ---- */
 
-$journalDirectory = __DIR__ . '/photos/photo journal';
+$journalDirectory = __DIR__ . '/photos/film';
 $entries = [];
 $rollNumbers = [];
 

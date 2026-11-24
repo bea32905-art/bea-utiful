@@ -59,7 +59,7 @@ function collectRollImageFiles(string $rollDirectory): array
 function rollImageUrl(string $rollName, string $relativePath): string
 {
     $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $relativePath)), static fn(string $segment): bool => $segment !== ''));
-    return 'photos/photo%20journal/' . rawurlencode($rollName) . '/' . implode('/', array_map('rawurlencode', $segments));
+    return 'photos/film/' . rawurlencode($rollName) . '/' . implode('/', array_map('rawurlencode', $segments));
 }
 
 /**
@@ -108,9 +108,9 @@ function metaValue(array $data, string $key): string
 
 /**
  * Discover rolls from the filesystem so new rolls appear automatically:
- * create photos/photo journal/roll-N/, drop in scans and metadata.json, done.
+ * create photos/film/roll-N/, drop in scans and metadata.json, done.
  */
-$journalDirectory = __DIR__ . '/photos/photo journal';
+$journalDirectory = __DIR__ . '/photos/film';
 $rolls = [];
 foreach (glob($journalDirectory . '/roll-*', GLOB_ONLYDIR) ?: [] as $rollDirectoryPath) {
     $rollName = basename((string) $rollDirectoryPath);

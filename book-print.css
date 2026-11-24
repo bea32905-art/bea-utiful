@@ -45,24 +45,24 @@ body {
 .corner-label {
     margin: 0;
     position: absolute;
-    font-size: 13pt;
-    font-weight: 700;
+    font-size: 16pt;
+    font-weight: 500;
     letter-spacing: 0.06em;
     color: var(--ink);
 }
 
-.corner-label.top-left { top: 8mm; left: 10mm; }
-.corner-label.top-right { top: 8mm; right: 10mm; }
-.corner-label.bottom-left { bottom: 8mm; left: 10mm; }
-.corner-label.bottom-right { bottom: 8mm; right: 10mm; }
+.corner-label.top-left { top: 12mm; left: 8mm; }
+.corner-label.top-right { top: 12mm; right: 8mm; }
+.corner-label.bottom-left { bottom: 12mm; left: 8mm; }
+.corner-label.bottom-right { bottom: 12mm; right: 8mm; }
 
 /* ---- Photograph ---- */
 
 .photo-frame {
     margin: 0;
     position: absolute;
-    top: 20mm;
-    bottom: 20mm;
+    top: 22mm;
+    bottom: 22mm;
     left: 8mm;
     right: 8mm;
     display: flex;
@@ -71,8 +71,25 @@ body {
 }
 
 .photo-frame img {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 234mm;
+    max-height: 156mm;
+}
+
+/* Portrait photographs are rotated 90 degrees anticlockwise so they
+   run across the landscape page, full-bleed left and right, with the
+   corner captions sitting in the black bands above and below. The
+   layout box is swapped (160mm wide = frame height, 234mm tall =
+   frame width); centred by the flex frame, the -90deg rotation brings
+   it back upright so it spans the full 234mm frame width. Keep these
+   two lengths in sync with the @page size if it ever changes. */
+
+.photo-frame img.rotated {
+    width: 156mm;
+    height: 234mm;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    transform: rotate(-90deg);
 }
 
 /* ---- Cover / colophon ---- */
