@@ -33,6 +33,40 @@ BUILD_DIR = PROJECT_DIR / "book-build"
 SITE_URL = "bea-utiful.me"
 NO_DATE_TEXT = "Undated"
 
+# Month -> cover colour: twelve hues spaced 30 degrees apart on the
+# colour wheel, starting December = blue. Books without a month
+# (whole rolls) fall back to the caption ink off-white.
+MONTH_COLOURS = {
+    12: "#0000ff",  # December — blue
+    1: "#0080ff",   # January — azure
+    2: "#00ffff",   # February — cyan
+    3: "#00ff80",   # March — spring green
+    4: "#00ff00",   # April — green
+    5: "#80ff00",   # May — yellow-green
+    6: "#ffff00",   # June — yellow
+    7: "#ff8000",   # July — orange
+    8: "#ff0000",   # August — red
+    9: "#ff0080",   # September — rose
+    10: "#ff00ff",  # October — magenta
+    11: "#8000ff",  # November — purple
+}
+
+
+def cover_colour(month: str | None) -> str:
+    """Cover background colour for a YYYY-MM book; falls back to black otherwise."""
+    if not month:
+        return "#000000"
+    number = int(month.split("-")[1])
+    return MONTH_COLOURS.get(number, "#000000")
+
+
+def contrast_text_colour(background_hex: str) -> str:
+    """Black on bright backgrounds, warm off-white on dark ones."""
+    value = background_hex.lstrip("#")
+    red, green, blue = (int(value[i : i + 2], 16) / 255 for i in (0, 2, 4))
+    luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+    return "#000000" if luminance >= 0.25 else "#f2efe6"
+
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 WEB_SUBDIRS = {"1 - web"}
 
@@ -132,8 +166,7 @@ def select_book(entries: list[dict], month: str | None, roll: str | None, draft:
     if roll:
         selected = [e for e in entries if e["roll"] == roll]
         title = f"Roll {int(roll.split('-')[1]):02d}"
-        subtitle = ""
-        return selected, title, subtitle
+        return selected, title, None, None
 
     months: dict[str, None] = {}
     for e in entries:
@@ -143,7 +176,7 @@ def select_book(entries: list[dict], month: str | None, roll: str | None, draft:
     if month is None:
         month = next(reversed(months), None) if months else None
     if not month or not re.fullmatch(r"\d{4}-\d{2}", month):
-        return [], "Empty Book", "No dated photographs found."
+        return [], "Empty Book", None, None
 
     in_month = [e for e in entries if e["iso_parts"] and f"{e['iso_parts'][0]}-{e['iso_parts'][1]}" == month]
     featured = [e for e in in_month if e["featured"]]
@@ -154,8 +187,7 @@ def select_book(entries: list[dict], month: str | None, roll: str | None, draft:
         title = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
     except ValueError:
         title = month
-    subtitle = f"{len(chosen)} {'photo' if len(chosen) == 1 else 'photos'}"
-    return chosen, title, subtitle
+    return chosen, title, month, len(chosen)
 
 
 def display_day(entry: dict) -> str:
@@ -167,8 +199,9 @@ def display_day(entry: dict) -> str:
         return entry["date"]
 
 
-def html_for(entries: list[dict], title: str, subtitle: str) -> str:
+def html_for(entries: list[dict], title: str, bg_colour: str, photo_count: int | None) -> str:
     parts: list[str] = []
+    fg_colour = contrast_text_colour(bg_colour)
     parts.append(f"""<!doctype html>
 <html lang="en">
 <head>
@@ -177,10 +210,10 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
 <link rel="stylesheet" href="{CSS_FILE.name}">
 </head>
 <body>
-<section class="sheet">
-  <div class="cover-title">
+<section class="sheet cover-sheet" style="background: {bg_colour}">
+  <div class="cover-title" style="color: {fg_colour}">
+    <p class="cover-kicker">Photo Journal</p>
     <h1>{escape(title)}</h1>
-    {f'<p class="subtitle">{escape(subtitle)}</p>' if subtitle else ''}
   </div>
 </section>""")
 
@@ -192,15 +225,30 @@ def html_for(entries: list[dict], title: str, subtitle: str) -> str:
   files, then rebuild.</p>
 </section>""")
 
+    # Inside covers: blank sheets in the cover colour, facing the front
+    # cover and the back cover respectively.
+    inside_cover = f"""
+<section class="sheet cover-sheet" style="background: {bg_colour}">
+</section>"""
+    parts.append(inside_cover)
+
     for entry in entries:
         parts.append(f"""
 <section class="sheet">
-  <p class="corner-label top-left">{escape(entry['film_type'])}</p>
-  <p class="corner-label top-right">{escape(display_day(entry))}</p>
-  <figure class="photo-frame"><img class="{'rotated' if entry['portrait'] else 'normal'}" src="{quote(entry['src'])}" alt=""></figure>
-  <p class="corner-label bottom-left">{escape(entry['title'])}</p>
-  <p class="corner-label bottom-right">{escape(SITE_URL)}</p>
+  <p class="corner-label bottom-left">{escape(entry['film_type'])}</p>
+  <p class="corner-label top-left">{escape(display_day(entry))}</p>
+  <figure class="photo-frame"><img class="{'normal' if entry['portrait'] else 'rotated'}" src="{quote(entry['src'])}" alt=""></figure>
+  <p class="corner-label bottom-right">{escape(entry['title'])}</p>
+  <p class="corner-label top-right">{escape(SITE_URL)}</p>
 </section>""")
+
+    # Back cover: blank page in the same colour as the front cover.
+    parts.append(f"""
+<section class="sheet cover-sheet" style="background: {bg_colour}">
+</section>""")
+
+    # Inside back cover: mirrors the inside front cover.
+    parts.append(inside_cover)
 
     parts.append("""
 </body>
@@ -213,6 +261,8 @@ def export_pages_as_pngs(pdf_path: Path, out_dir: Path, dpi: int = 300) -> int:
     import pymupdf  # noqa: PLC0415 — imported after arg parsing on purpose
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    for stale in out_dir.glob("page-*.png"):
+        stale.unlink()
     count = 0
     with pymupdf.open(pdf_path) as doc:
         for page in doc:
@@ -231,20 +281,23 @@ def main() -> int:
     args = parser.parse_args()
 
     entries = collect_entries()
-    selected, title, subtitle = select_book(entries, args.month, args.roll, args.draft)
+    selected, title, month, photo_count = select_book(entries, args.month, args.roll, args.draft)
 
     BUILD_DIR.mkdir(exist_ok=True)
     html_path = BUILD_DIR / "book.html"
-    html_path.write_text(html_for(selected, title, subtitle), encoding="utf-8")
+    html_path.write_text(
+        html_for(selected, title, cover_colour(month), photo_count), encoding="utf-8"
+    )
 
     slug = title.lower().replace(" ", "-")
     pdf_path = BUILD_DIR / f"book-{slug}.pdf"
 
     from weasyprint import HTML  # noqa: PLC0415 — imported after arg parsing on purpose
 
-    HTML(string=html_for(selected, title, subtitle), base_url=str(PROJECT_DIR)).write_pdf(
-        str(pdf_path), stylesheets=[CSS_FILE]
-    )
+    HTML(
+        string=html_for(selected, title, cover_colour(month), photo_count),
+        base_url=str(PROJECT_DIR),
+    ).write_pdf(str(pdf_path), stylesheets=[CSS_FILE])
     print(f"Wrote {pdf_path} ({len(selected)} photos)")
 
     png_dir = BUILD_DIR / "pngs"

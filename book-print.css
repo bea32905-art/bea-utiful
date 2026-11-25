@@ -1,15 +1,27 @@
 /* bea-utiful photo book — WeasyPrint stylesheet.
-   One 25 x 20 cm page = one photograph, full-bleed on black,
-   captioned in the four corners: film type (top-left), date
+   One A5 portrait page (148 x 210 mm) = one photograph, full-bleed on
+   black, captioned in the four corners: film type (top-left), date
    (top-right), title (bottom-left), bea-utiful.me (bottom-right). */
 
 :root {
     --ink: #f2efe6; /* warm off-white for captions */
     --slab: "American Typewriter", "Rockwell", "Iowan Old Style", Georgia, serif;
+
+    /* Corner-label geometry. Labels are fixed-size boxes so their
+       rotation pivot sits a constant distance from the page edge,
+       whatever the caption length. */
+    --page-height: 210mm;
+    --page-width: 148mm;
+    --photo-height: calc(0.58 * 300mm);
+    --photo-width: calc(0.58 * 200mm);
+    --cap-run: 100mm;   /* label box length, along the rotated text run */
+    --cap-thick: 6mm;   /* label box thickness = line-height */
+    --cap-inset: 9mm;   /* gap from the page edge to the label band */
+    --cap-end: calc((var(--page-height) - var(--photo-height)) / 2);    /* gap from the page end to where glyphs sit */
 }
 
 @page {
-    size: 250mm 200mm; /* 25 cm x 20 cm */
+    size: var(--page-width) var(--page-height); /* A5 portrait */
     margin: 0;
 }
 
@@ -26,8 +38,8 @@ body {
 }
 
 .sheet {
-    width: 250mm;
-    height: 200mm;
+    width: var(--page-width);
+    height: var(--page-height);
     background: #000;
     position: relative;
     overflow: hidden;
@@ -45,47 +57,74 @@ body {
 .corner-label {
     margin: 0;
     position: absolute;
-    font-size: 16pt;
-    font-weight: 500;
+    width: var(--cap-run);
+    line-height: var(--cap-thick);
+    font-size: 13pt;
+    font-weight: 600;
     letter-spacing: 0.06em;
     color: var(--ink);
+    white-space: nowrap;
+    transform: rotate(-90deg); /* book reads landscape, bound on the long edge */
 }
 
-.corner-label.top-left { top: 12mm; left: 8mm; }
-.corner-label.top-right { top: 12mm; right: 8mm; }
-.corner-label.bottom-left { bottom: 12mm; left: 8mm; }
-.corner-label.bottom-right { bottom: 12mm; right: 8mm; }
+/* Boxes are rotated around their centre, so each rule offsets the
+   unrotated box by half the size difference to land the rotated band
+   exactly --cap-inset from its edge. Glyphs hug the page top via
+   text-align: right (reading bottom-to-top after -90deg). */
+.corner-label.top-left {
+    left: calc(var(--cap-inset) - (var(--cap-run) - var(--cap-thick)) / 2);
+    top: calc(var(--cap-end) + (var(--cap-run) - var(--cap-thick)) / 2);
+    text-align: right;
+}
+
+.corner-label.bottom-left {
+    left: calc(var(--cap-inset) - (var(--cap-run) - var(--cap-thick)) / 2);
+    bottom: calc(var(--cap-end) + (var(--cap-run) - var(--cap-thick)) / 2);
+    text-align: left;
+}
+
+.corner-label.top-right {
+    right: calc(var(--cap-inset) - (var(--cap-run) - var(--cap-thick)) / 2);
+    top: calc(var(--cap-end) + (var(--cap-run) - var(--cap-thick)) / 2);
+    text-align: right;
+}
+
+.corner-label.bottom-right {
+    right: calc(var(--cap-inset) - (var(--cap-run) - var(--cap-thick)) / 2);
+    bottom: calc(var(--cap-end) + (var(--cap-run) - var(--cap-thick)) / 2);
+    text-align: left;
+}
 
 /* ---- Photograph ---- */
 
 .photo-frame {
     margin: 0;
     position: absolute;
-    top: 22mm;
-    bottom: 22mm;
-    left: 8mm;
-    right: 8mm;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .photo-frame img {
-    max-width: 234mm;
-    max-height: 156mm;
+    max-width: var(--photo-width);
+    max-height: var(--photo-height);
 }
 
-/* Portrait photographs are rotated 90 degrees anticlockwise so they
-   run across the landscape page, full-bleed left and right, with the
-   corner captions sitting in the black bands above and below. The
-   layout box is swapped (160mm wide = frame height, 234mm tall =
-   frame width); centred by the flex frame, the -90deg rotation brings
-   it back upright so it spans the full 234mm frame width. Keep these
-   two lengths in sync with the @page size if it ever changes. */
+/* Landscape photographs are rotated 90 degrees anticlockwise so they
+   run down the portrait page, filling the whole frame, with the corner
+   captions sitting in the black bands above and below. The layout box
+   is swapped (166mm wide = frame height, 132mm tall = frame width);
+   centred by the flex frame, the -90deg rotation brings it upright so
+   it spans the full 132mm frame width. Keep these two lengths in sync
+   with the @page size if it ever changes. */
 
 .photo-frame img.rotated {
-    width: 156mm;
-    height: 234mm;
+    width: var(--photo-height);
+    height: var(--photo-width);
     max-width: none;
     max-height: none;
     object-fit: contain;
@@ -99,17 +138,25 @@ body {
     top: 50%;
     left: 12mm;
     right: 12mm;
-    transform: translateY(-50%);
-    text-align: center;
+    transform: translateY(-50%) rotate(-90deg); /* reads landscape, bound long-edge */
+    text-align: left;
+}
+
+.cover-title .cover-kicker {
+    margin: 0 0 6mm;
+    font-size: 20pt;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
 }
 
 .cover-title h1 {
     margin: 0;
     font-family: var(--slab);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 40pt;
     letter-spacing: 0.04em;
-    color: var(--ink);
+    color: inherit; /* month colour comes from the inline style on .cover-title */
 }
 
 .cover-title .subtitle {
